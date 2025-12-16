@@ -3,6 +3,19 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 
+// Get all users (for discovery) - MUST BE BEFORE /:id route
+router.get('/all/users', auth, async (req, res) => {
+    try {
+        const users = await User.find({ _id: { $ne: req.user.id } })
+            .select('pseudoName avatarUrl bio followers following isOnline lastSeen')
+            .sort({ createdAt: -1 });
+
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Follow a user
 router.post('/:id/follow', auth, async (req, res) => {
     if (req.user.id === req.params.id) {
@@ -46,19 +59,6 @@ router.get('/:id', async (req, res) => {
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         res.json(user);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
-// Get all users (for discovery)
-router.get('/all/users', auth, async (req, res) => {
-    try {
-        const users = await User.find({ _id: { $ne: req.user.id } })
-            .select('pseudoName avatarUrl bio followers following isOnline lastSeen')
-            .sort({ createdAt: -1 });
-
-        res.json(users);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
