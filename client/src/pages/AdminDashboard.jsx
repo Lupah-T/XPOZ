@@ -12,6 +12,8 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [reports, setReports] = useState([]); // If we add report management later
     const [activeTab, setActiveTab] = useState('users');
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!user || user.role !== 'admin') {
@@ -19,20 +21,33 @@ const AdminDashboard = () => {
             // But better UX to redirect.
             // For now, let's assume if the API fails with 403, we redirect.
         }
-        fetchStats();
-        fetchUsers();
-        fetchReports();
+        const loadData = async () => {
+            setLoading(true);
+            await Promise.all([fetchStats(), fetchUsers(), fetchReports()]);
+            setLoading(false);
+        };
+        loadData();
     }, []);
 
     const fetchStats = async () => {
         try {
+            console.log('[AdminDashboard] Fetching stats from:', `${API_URL}/api/admin/stats`);
             const res = await fetch(`${API_URL}/api/admin/stats`, {
                 headers: { 'x-auth-token': token }
             });
-            if (res.status === 403) return navigate('/admin/login');
+            if (res.status === 403) {
+                console.warn('[AdminDashboard] Access denied (403)');
+                return navigate('/admin/login');
+            }
+            if (!res.ok) {
+                throw new Error(`Failed to fetch stats: ${res.status}`);
+            }
             const data = await res.json();
             setStats(data);
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error('[AdminDashboard] Error fetching stats:', err);
+            setError(`Failed to load stats: ${err.message}`);
+        }
     };
 
     const fetchUsers = async () => {
@@ -103,6 +118,27 @@ const AdminDashboard = () => {
                     <h1 style={{ color: '#ef4444' }}>Admin Dashboard</h1>
                     <button onClick={logout} className="btn" style={{ background: '#334155' }}>Logout</button>
                 </div>
+
+                {/* Error Display */}
+                {error && (
+                    <div style={{
+                        background: 'rgba(239,68,68,0.2)',
+                        color: '#ef4444',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        marginBottom: '1.5rem',
+                        border: '1px solid #ef4444'
+                    }}>
+                        ⚠️ {error}
+                    </div>
+                )}
+
+                {/* Loading State */}
+                {loading && (
+                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                        Loading admin dashboard...
+                    </div>
+                )}
 
                 {/* Stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>

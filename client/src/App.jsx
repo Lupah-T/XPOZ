@@ -6,9 +6,13 @@ import Groups from './pages/Groups';
 import CreatePost from './pages/CreatePost';
 import Profile from './pages/Profile';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import BottomNav from './components/BottomNav';
 
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import GroupChat from './pages/GroupChat';
+import Chats from './pages/Chats';
 
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
@@ -29,55 +33,83 @@ const AdminRoute = ({ children }) => {
 };
 
 const App = () => {
+  const ShowBottomNav = () => {
+    const { token } = useAuth();
+    const shouldHide = window.location.pathname === '/auth' ||
+      window.location.pathname === '/admin/login' ||
+      window.location.pathname.startsWith('/admin/dashboard');
+
+    return token && !shouldHide ? <BottomNav /> : null;
+  };
+
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/groups"
-            element={
-              <ProtectedRoute>
-                <Groups />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/create"
-            element={
-              <ProtectedRoute>
-                <CreatePost />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/:id"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/groups"
+              element={
+                <ProtectedRoute>
+                  <Groups />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chats"
+              element={
+                <ProtectedRoute>
+                  <Chats />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups/:id/chat"
+              element={
+                <ProtectedRoute>
+                  <GroupChat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create"
+              element={
+                <ProtectedRoute>
+                  <CreatePost />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/:id"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <ShowBottomNav />
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

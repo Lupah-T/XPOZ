@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 
@@ -91,6 +90,31 @@ const Home = () => {
         }
     };
 
+    const handleDelete = async (reportId) => {
+        if (!window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/api/reports/${reportId}`, {
+                method: 'DELETE',
+                headers: { 'x-auth-token': token }
+            });
+
+            if (res.ok) {
+                // Remove the report from state
+                setReports(reports.filter(r => r._id !== reportId));
+                alert('Post deleted successfully');
+            } else {
+                const error = await res.json();
+                alert(error.message || 'Failed to delete post');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error deleting post');
+        }
+    };
+
     return (
         <>
             <Header />
@@ -134,7 +158,23 @@ const Home = () => {
                                             <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{report.location}</div>
                                         </div>
                                     </div>
-                                    <button style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}>•••</button>
+                                    {/* Delete Button (only for author) */}
+                                    {user && report.author && report.author._id === user.id && (
+                                        <button
+                                            onClick={() => handleDelete(report._id)}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: '#ef4444',
+                                                cursor: 'pointer',
+                                                fontSize: '1.2rem',
+                                                padding: '0.25rem 0.5rem'
+                                            }}
+                                            title="Delete post"
+                                        >
+                                            🗑️
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Media */}
@@ -245,7 +285,6 @@ const Home = () => {
                 </div>
 
             </main>
-            <Footer />
         </>
     );
 };

@@ -52,13 +52,13 @@ const Groups = () => {
 
     const handleJoinGroup = async (groupId) => {
         try {
-            const res = await fetch(`${API_URL} / api / groups / ${groupId} / join`, {
+            const res = await fetch(`${API_URL}/api/groups/${groupId}/join`, {
                 method: 'POST',
                 headers: { 'x-auth-token': token }
             });
             const data = await res.json();
             alert(data.message);
-            // Ideally update local user state or re-fetch groups to show "Joined" status
+            fetchGroups(); // Re-fetch to update membership status
         } catch (err) {
             console.error(err);
         }
@@ -101,22 +101,46 @@ const Groups = () => {
                     <div>
                         <h2 style={{ marginBottom: '1.5rem' }}>Explore Groups</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {groups.map(group => (
-                                <div key={group._id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <h3 style={{ margin: 0 }}>{group.name}</h3>
-                                        <p style={{ margin: '0.5rem 0', color: '#94a3b8' }}>{group.description}</p>
-                                        <small>{group.members.length} members</small>
+                            {groups.map(group => {
+                                const isMemb = user && group.members && group.members.some(m => m._id === user.id || m === user.id);
+                                return (
+                                    <div key={group._id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <h3 style={{ margin: 0 }}>{group.name}</h3>
+                                            <p style={{ margin: '0.5rem 0', color: '#94a3b8' }}>{group.description}</p>
+                                            <small>{group.members.length} members</small>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            {isMemb ? (
+                                                <>
+                                                    <button
+                                                        className="btn"
+                                                        onClick={() => window.location.href = `/groups/${group._id}/chat`}
+                                                        style={{ background: '#a855f7' }}
+                                                    >
+                                                        💬 Chat
+                                                    </button>
+                                                    <button
+                                                        className="btn"
+                                                        style={{ background: 'rgba(255,255,255,0.1)' }}
+                                                        title="View members"
+                                                    >
+                                                        👥
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    className="btn"
+                                                    onClick={() => handleJoinGroup(group._id)}
+                                                    style={{ background: 'rgba(255,255,255,0.1)' }}
+                                                >
+                                                    Join
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                    <button
-                                        className="btn"
-                                        onClick={() => handleJoinGroup(group._id)}
-                                        style={{ background: 'rgba(255,255,255,0.1)' }}
-                                    >
-                                        Join
-                                    </button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
 

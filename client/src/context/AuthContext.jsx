@@ -20,17 +20,24 @@ export const AuthProvider = ({ children }) => {
 
     const fetchUser = async (authToken) => {
         try {
+            console.log('[AuthContext] Fetching user data from:', `${API_URL}/api/auth/me`);
             const res = await fetch(`${API_URL}/api/auth/me`, {
                 headers: { 'x-auth-token': authToken }
             });
+
+            console.log('[AuthContext] Response status:', res.status);
+
             if (res.ok) {
                 const userData = await res.json();
+                console.log('[AuthContext] User data fetched successfully:', userData.pseudoName);
                 // Normalize _id to id to match login/register response
                 setUser({ ...userData, id: userData._id });
             } else {
+                console.warn('[AuthContext] Failed to fetch user, status:', res.status);
                 logout();
             }
         } catch (err) {
+            console.error('[AuthContext] Error fetching user:', err);
             logout();
         } finally {
             setLoading(false);
@@ -38,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login = async (pseudoName, password) => {
+        console.log('[AuthContext] Attempting login to:', `${API_URL}/api/auth/login`);
         const res = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -45,8 +53,12 @@ export const AuthProvider = ({ children }) => {
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
+        if (!res.ok) {
+            console.error('[AuthContext] Login failed:', data.message);
+            throw new Error(data.message);
+        }
 
+        console.log('[AuthContext] Login successful');
         localStorage.setItem('token', data.token);
         setToken(data.token);
         setUser(data.user);
