@@ -158,15 +158,10 @@ router.delete('/:id', auth, async (req, res) => {
         }
 
         // Delete the report
-        await Report.findByIdAndDelete(req.params.id);
-
-        // TODO: Also delete the evidence file if it exists
-        // if (report.evidenceUrl) {
-        //     fs.unlinkSync(report.evidenceUrl);
-        // }
-
-        res.json({ message: 'Report deleted successfully' });
+        await Report.deleteOne({ _id: req.params.id });
+        res.json({ message: 'Post deleted successfully' });
     } catch (err) {
+        console.error('Delete error:', err);
         res.status(500).json({ message: err.message });
     }
 });

@@ -94,15 +94,12 @@ const Users = () => {
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
 
-            <main style={{ flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <main style={{ flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%', paddingBottom: '80px' }}>
                 {/* Header */}
                 <div style={{
                     padding: '1.5rem 1rem',
                     borderBottom: '1px solid var(--glass-border)',
-                    background: 'var(--glass-bg)',
-                    position: 'sticky',
-                    top: '60px',
-                    zIndex: 10
+                    background: 'var(--glass-bg)'
                 }}>
                     <h1 style={{ margin: '0 0 1rem 0', fontSize: '1.75rem' }}>Discover Users</h1>
 

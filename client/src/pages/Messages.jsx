@@ -6,7 +6,7 @@ const Messages = () => {
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
 
-            <main style={{ flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%', padding: '0' }}>
+            <main style={{ flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%', padding: '0', paddingBottom: '80px' }}>
                 {/* Header */}
                 <div style={{
                     padding: '1.5rem 1rem',
