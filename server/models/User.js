@@ -24,10 +24,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: '' // or a default placeholder URL
     },
-    groups: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Group'
-    }],
+    bio: {
+        type: String,
+        maxlength: 150,
+        default: ''
+    },
     role: {
         type: String,
         enum: ['user', 'admin'],

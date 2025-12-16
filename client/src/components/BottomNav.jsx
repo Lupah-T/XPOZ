@@ -15,8 +15,8 @@ const BottomNav = () => {
 
     const navItems = [
         { path: '/', icon: '🏠', label: 'Home' },
-        { path: '/chats', icon: '💬', label: 'Chats' },
-        { path: '/groups', icon: '👥', label: 'Groups' },
+        { path: '/users', icon: '👥', label: 'Users' },
+        { path: '/messages', icon: '💬', label: 'Messages' },
         { path: `/profile/${user?.id}`, icon: '👤', label: 'Profile' }
     ];
 

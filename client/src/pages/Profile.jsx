@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 
@@ -12,6 +11,8 @@ const Profile = () => {
     const [posts, setPosts] = useState([]);
     const [isFollowing, setIsFollowing] = useState(false);
     const [stats, setStats] = useState({ followers: 0, following: 0 });
+    const [editingBio, setEditingBio] = useState(false);
+    const [bioText, setBioText] = useState('');
 
     useEffect(() => {
         fetchProfile();
@@ -30,6 +31,7 @@ const Profile = () => {
             const res = await fetch(`${API_URL}/api/users/${id}`);
             const data = await res.json();
             setProfileUser(data);
+            setBioText(data.bio || '');
             setStats({ followers: data.followers.length, following: data.following.length });
         } catch (err) {
             console.error(err);
@@ -85,6 +87,26 @@ const Profile = () => {
         } catch (err) {
             console.error(err);
             alert('Failed to update avatar');
+        }
+    };
+
+    const handleBioSave = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/users/bio`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token
+                },
+                body: JSON.stringify({ bio: bioText })
+            });
+            const data = await res.json();
+            setProfileUser({ ...profileUser, bio: bioText });
+            setEditingBio(false);
+            alert('Bio updated!');
+        } catch (err) {
+            console.error(err);
+            alert('Failed to update bio');
         }
     };
 
@@ -149,9 +171,64 @@ const Profile = () => {
                             <span><strong>{stats.following}</strong> following</span>
                         </div>
 
+                        {/* Bio Section */}
                         <div>
-                            <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{profileUser.pseudoName}</div>
-                            <div style={{ color: '#94a3b8' }}>Member of X-POZ Resistance. Exposure is our currency.</div>
+                            <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{profileUser.pseudoName}</div>
+                            {currentUser && currentUser.id === profileUser._id ? (
+                                editingBio ? (
+                                    <div>
+                                        <textarea
+                                            value={bioText}
+                                            onChange={(e) => setBioText(e.target.value)}
+                                            maxLength={150}
+                                            placeholder="Write a short bio..."
+                                            className="textarea"
+                                            style={{ width: '100%', minHeight: '60px', marginBottom: '0.5rem', fontSize: '16px' }}
+                                        />
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                                {bioText.length}/150
+                                            </span>
+                                            <div style={{ gap: '0.5rem', display: 'flex' }}>
+                                                <button
+                                                    className="btn"
+                                                    onClick={() => {
+                                                        setBioText(profileUser.bio || '');
+                                                        setEditingBio(false);
+                                                    }}
+                                                    style={{ background: 'transparent', border: '1px solid var(--text-secondary)', padding: '0.4rem 1rem' }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    className="btn"
+                                                    onClick={handleBioSave}
+                                                    style={{ background: '#a855f7', padding: '0.4rem 1rem' }}
+                                                >
+                                                    Save
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>
+                                            {profileUser.bio || 'No bio yet'}
+                                        </div>
+                                        <button
+                                            className="btn"
+                                            onClick={() => setEditingBio(true)}
+                                            style={{ background: 'transparent', border: '1px solid var(--text-secondary)', padding: '0.3rem 0.8rem', fontSize: '0.85rem' }}
+                                        >
+                                            Edit Bio
+                                        </button>
+                                    </div>
+                                )
+                            ) : (
+                                <div style={{ color: '#94a3b8' }}>
+                                    {profileUser.bio || 'No bio'}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -188,7 +265,7 @@ const Profile = () => {
                 </div>
 
             </main>
-            <Footer />
+
         </>
     );
 };

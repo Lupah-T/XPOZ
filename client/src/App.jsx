@@ -2,17 +2,16 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
-import Groups from './pages/Groups';
 import CreatePost from './pages/CreatePost';
 import Profile from './pages/Profile';
+import Users from './pages/Users';
+import Messages from './pages/Messages';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import BottomNav from './components/BottomNav';
 
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
-import GroupChat from './pages/GroupChat';
-import Chats from './pages/Chats';
 
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
@@ -58,26 +57,18 @@ const App = () => {
               }
             />
             <Route
-              path="/groups"
+              path="/users"
               element={
                 <ProtectedRoute>
-                  <Groups />
+                  <Users />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/chats"
+              path="/messages"
               element={
                 <ProtectedRoute>
-                  <Chats />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/groups/:id/chat"
-              element={
-                <ProtectedRoute>
-                  <GroupChat />
+                  <Messages />
                 </ProtectedRoute>
               }
             />

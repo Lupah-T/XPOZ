@@ -42,8 +42,8 @@ const Header = () => {
                     alignItems: 'center'
                 }} className="desktop-nav">
                     <Link to="/" className="nav-icon" title="Home">🏠</Link>
-                    <Link to="/chats" className="nav-icon" title="Chats">💬</Link>
-                    <Link to="/groups" className="nav-icon" title="Groups">👥</Link>
+                    <Link to="/users" className="nav-icon" title="Users">👥</Link>
+                    <Link to="/messages" className="nav-icon" title="Messages">💬</Link>
                     <Link to="/create" className="nav-icon" title="New Post">➕</Link>
                     {user && user.role === 'admin' && (
                         <Link to="/admin/dashboard" className="nav-icon" title="Admin Dashboard">🛡️</Link>
