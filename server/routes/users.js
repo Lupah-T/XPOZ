@@ -6,12 +6,17 @@ const User = require('../models/User');
 // Get all users (for discovery) - MUST BE BEFORE /:id route
 router.get('/all/users', auth, async (req, res) => {
     try {
+        console.log('[GET /all/users] Request from user:', req.user.id);
+
         const users = await User.find({ _id: { $ne: req.user.id } })
             .select('pseudoName avatarUrl bio followers following isOnline lastSeen')
             .sort({ createdAt: -1 });
 
+        console.log('[GET /all/users] Found users:', users.length);
+
         res.json(users);
     } catch (err) {
+        console.error('[GET /all/users] Error:', err);
         res.status(500).json({ message: err.message });
     }
 });

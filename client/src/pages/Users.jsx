@@ -30,15 +30,31 @@ const Users = () => {
 
     const fetchUsers = async () => {
         try {
+            console.log('[Users] Fetching users from:', `${API_URL}/api/users/all/users`);
+            console.log('[Users] Token:', token ? 'Present' : 'Missing');
+
             const res = await fetch(`${API_URL}/api/users/all/users`, {
                 headers: { 'x-auth-token': token }
             });
+
+            console.log('[Users] Response status:', res.status);
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('[Users] Error response:', errorText);
+                setLoading(false);
+                return;
+            }
+
             const data = await res.json();
+            console.log('[Users] Received users:', data.length, 'users');
+            console.log('[Users] Users data:', data);
+
             setUsers(data);
             setFilteredUsers(data);
             setLoading(false);
         } catch (err) {
-            console.error('Failed to fetch users:', err);
+            console.error('[Users] Fetch error:', err);
             setLoading(false);
         }
     };
