@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Header = () => {
     const { user } = useAuth();
@@ -20,7 +21,7 @@ const Header = () => {
                 {/* Profile Icon - using a generic avatar or user's if available */}
                 <Link to={user ? `/profile/${user.id}` : '/auth'} className="nav-icon" title="Profile">
                     <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#cbd5e1', overflow: 'hidden' }}>
-                        {user?.avatarUrl && <img src={`http://localhost:5000/${user.avatarUrl}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                        {user?.avatarUrl && <img src={`${API_URL}/${user.avatarUrl}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                     </div>
                 </Link>
             </div>

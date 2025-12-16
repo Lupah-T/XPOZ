@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Groups = () => {
     const [groups, setGroups] = useState([]);
@@ -12,7 +13,7 @@ const Groups = () => {
 
     const fetchGroups = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/groups');
+            const res = await fetch(`${API_URL}/api/groups`);
             const data = await res.json();
             setGroups(data);
         } catch (err) {
@@ -27,7 +28,7 @@ const Groups = () => {
     const handleCreateGroup = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('http://localhost:5000/api/groups', {
+            const res = await fetch(`${API_URL}/api/groups`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ const Groups = () => {
 
     const handleJoinGroup = async (groupId) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/groups/${groupId}/join`, {
+            const res = await fetch(`${API_URL} / api / groups / ${groupId} / join`, {
                 method: 'POST',
                 headers: { 'x-auth-token': token }
             });

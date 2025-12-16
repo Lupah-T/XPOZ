@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const ReportForm = () => {
     const { token, user } = useAuth();
@@ -41,7 +42,7 @@ const ReportForm = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/reports', {
+            const response = await fetch(`${API_URL}/api/reports`, {
                 method: 'POST',
                 headers: {
                     'x-auth-token': token

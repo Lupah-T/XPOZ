@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Profile = () => {
     const { id } = useParams();
@@ -26,7 +27,7 @@ const Profile = () => {
 
     const fetchProfile = async () => {
         try {
-            const res = await fetch(`http://localhost:5000/api/users/${id}`);
+            const res = await fetch(`${API_URL}/api/users/${id}`);
             const data = await res.json();
             setProfileUser(data);
             setStats({ followers: data.followers.length, following: data.following.length });
@@ -37,7 +38,7 @@ const Profile = () => {
 
     const fetchPosts = async () => {
         try {
-            const res = await fetch(`http://localhost:5000/api/reports?author=${id}`);
+            const res = await fetch(`${API_URL}/api/reports?author=${id}`);
             const data = await res.json();
             setPosts(data);
         } catch (err) {
@@ -48,7 +49,7 @@ const Profile = () => {
     const handleFollowToggle = async () => {
         if (!token || !currentUser) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/users/${id}/follow`, {
+            const res = await fetch(`${API_URL}/api/users/${id}/follow`, {
                 method: 'POST',
                 headers: { 'x-auth-token': token }
             });
@@ -73,7 +74,7 @@ const Profile = () => {
         formData.append('avatar', file);
 
         try {
-            const res = await fetch(`http://localhost:5000/api/users/${id}/avatar`, {
+            const res = await fetch(`${API_URL}/api/users/${id}/avatar`, {
                 method: 'POST',
                 headers: { 'x-auth-token': token },
                 body: formData
@@ -98,7 +99,7 @@ const Profile = () => {
 
                     <div style={{ flexShrink: 0 }}>
                         {profileUser.avatarUrl ? (
-                            <img src={`http://localhost:5000/${profileUser.avatarUrl}`} alt="Avatar" style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover' }} />
+                            <img src={`${API_URL}/${profileUser.avatarUrl}`} alt="Avatar" style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover' }} />
                         ) : (
                             <div style={{ width: '150px', height: '150px', borderRadius: '50%', background: 'linear-gradient(45deg, #6d28d9, #ec4899)' }}></div>
                         )}
@@ -161,9 +162,9 @@ const Profile = () => {
                         {posts.map(post => (
                             <div key={post._id} style={{ aspectRatio: '1/1', background: '#334155', borderRadius: '4px', overflow: 'hidden', position: 'relative', cursor: 'pointer' }}>
                                 {post.evidenceType === 'image' ? (
-                                    <img src={`http://localhost:5000/${post.evidenceUrl}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img src={`${API_URL}/${post.evidenceUrl}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : post.evidenceType === 'video' ? (
-                                    <video src={`http://localhost:5000/${post.evidenceUrl}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <video src={`${API_URL}/${post.evidenceUrl}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
                                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', textAlign: 'center', color: '#94a3b8', background: 'rgba(255,255,255,0.05)' }}>
                                         {post.title}

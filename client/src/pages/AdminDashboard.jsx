@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 
 const AdminDashboard = () => {
     const { token, user, logout } = useAuth();
@@ -25,7 +26,7 @@ const AdminDashboard = () => {
 
     const fetchStats = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/admin/stats', {
+            const res = await fetch(`${API_URL}/api/admin/stats`, {
                 headers: { 'x-auth-token': token }
             });
             if (res.status === 403) return navigate('/admin/login');
@@ -36,7 +37,7 @@ const AdminDashboard = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/admin/users', {
+            const res = await fetch(`${API_URL}/api/admin/users`, {
                 headers: { 'x-auth-token': token }
             });
             const data = await res.json();
@@ -52,7 +53,7 @@ const AdminDashboard = () => {
             // Let's use the public one for now, or create a specific one if needed.
             // Actually, let's create a specific one to ensure we get ALL reports efficiently or reuse existing if pagination fits.
             // For now, reuse public GET /api/reports
-            const res = await fetch('http://localhost:5000/api/reports', {
+            const res = await fetch(`${API_URL}/api/reports`, {
                 headers: { 'x-auth-token': token }
             });
             const data = await res.json();
@@ -62,7 +63,7 @@ const AdminDashboard = () => {
 
     const handleFreeze = async (userId) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/freeze`, {
+            const res = await fetch(`${API_URL}/api/admin/users/${userId}/freeze`, {
                 method: 'PUT',
                 headers: { 'x-auth-token': token }
             });
@@ -74,7 +75,7 @@ const AdminDashboard = () => {
     const handleDeleteUser = async (userId) => {
         if (!window.confirm('Are you sure? This deletes the user and ALL their reports.')) return;
         try {
-            await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+            await fetch(`${API_URL}/api/admin/users/${userId}`, {
                 method: 'DELETE',
                 headers: { 'x-auth-token': token }
             });
@@ -85,7 +86,7 @@ const AdminDashboard = () => {
     const handleDeleteReport = async (reportId) => {
         if (!window.confirm('Delete this report permanently?')) return;
         try {
-            await fetch(`http://localhost:5000/api/admin/reports/${reportId}`, {
+            await fetch(`${API_URL}/api/admin/reports/${reportId}`, {
                 method: 'DELETE',
                 headers: { 'x-auth-token': token }
             });

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Home = () => {
     const [reports, setReports] = useState([]);
@@ -9,7 +10,7 @@ const Home = () => {
 
     const fetchReports = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/reports');
+            const res = await fetch(`${API_URL}/api/reports`);
             const data = await res.json();
             setReports(data);
         } catch (err) {
@@ -27,7 +28,7 @@ const Home = () => {
     const handleFollow = async (authorId) => {
         if (!token) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/users/${authorId}/follow`, {
+            const res = await fetch(`${API_URL}/api/users/${authorId}/follow`, {
                 method: 'POST',
                 headers: {
                     'x-auth-token': token
@@ -43,7 +44,7 @@ const Home = () => {
     const handleLike = async (reportId) => {
         if (!token) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/reports/${reportId}/like`, {
+            const res = await fetch(`${API_URL}/api/reports/${reportId}/like`, {
                 method: 'POST',
                 headers: { 'x-auth-token': token }
             });
@@ -57,7 +58,7 @@ const Home = () => {
     const handleComment = async (reportId, text) => {
         if (!token || !text.trim()) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/reports/${reportId}/comment`, {
+            const res = await fetch(`${API_URL}/api/reports/${reportId}/comment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ const Home = () => {
             // We need a backend route for replies, but for now we will just re-use the comment logic or simple alert 
             // since I added the route in the backend step, let's try to use it if I remember the path.
             // Route: /:id/comment/:commentId/reply
-            const res = await fetch(`http://localhost:5000/api/reports/${reportId}/comment/${commentId}/reply`, {
+            const res = await fetch(`${API_URL}/api/reports/${reportId}/comment/${commentId}/reply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                 body: JSON.stringify({ text })
@@ -121,7 +122,7 @@ const Home = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                         <a href={`/profile/${report.author?._id}`}>
                                             {report.author?.avatarUrl ? (
-                                                <img src={`http://localhost:5000/${report.author.avatarUrl}`} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                <img src={`${API_URL}/${report.author.avatarUrl}`} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
                                             ) : (
                                                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#334155' }}></div>
                                             )}
@@ -139,13 +140,13 @@ const Home = () => {
                                 {/* Media */}
                                 <div style={{ width: '100%', background: '#000', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     {report.evidenceType === 'image' && (
-                                        <img src={`http://localhost:5000/${report.evidenceUrl}`} alt="Evidence" style={{ width: '100%', height: 'auto', maxHeight: '600px', objectFit: 'contain' }} />
+                                        <img src={`${API_URL}/${report.evidenceUrl}`} alt="Evidence" style={{ width: '100%', height: 'auto', maxHeight: '600px', objectFit: 'contain' }} />
                                     )}
                                     {report.evidenceType === 'video' && (
-                                        <video controls src={`http://localhost:5000/${report.evidenceUrl}`} style={{ width: '100%', maxHeight: '600px' }} />
+                                        <video controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '100%', maxHeight: '600px' }} />
                                     )}
                                     {report.evidenceType === 'audio' && (
-                                        <audio controls src={`http://localhost:5000/${report.evidenceUrl}`} style={{ width: '90%' }} />
+                                        <audio controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '90%' }} />
                                     )}
                                     {(report.evidenceType === 'none' || !report.evidenceType) && (
                                         <div style={{ padding: '2rem', textAlign: 'center' }}>
