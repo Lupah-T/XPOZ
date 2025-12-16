@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Report = require('../models/Report');
-const Group = require('../models/Group');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 
@@ -14,12 +13,10 @@ router.get('/stats', async (req, res) => {
     try {
         const userCount = await User.countDocuments();
         const reportCount = await Report.countDocuments();
-        const groupCount = await Group.countDocuments();
 
         res.json({
             users: userCount,
-            reports: reportCount,
-            groups: groupCount
+            reports: reportCount
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
