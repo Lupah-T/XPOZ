@@ -224,7 +224,7 @@ const Home = () => {
                                         {/* Delete Button (for author or admin) */}
                                         {user && (report.author?._id === user.id || user.role === 'admin') && (
                                             <button
-                                                onClick={() => handleDelete(report._id, user.role === 'admin')}
+                                                onClick={() => handleDelete(report._id, user.role === 'admin' && report.author?._id !== user.id)}
                                                 style={{
                                                     background: 'transparent',
                                                     border: 'none',
