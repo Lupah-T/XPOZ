@@ -6,6 +6,7 @@ import CreatePost from './pages/CreatePost';
 import Profile from './pages/Profile';
 import Users from './pages/Users';
 import Messages from './pages/Messages';
+import RecoverPassword from './pages/RecoverPassword'; // Import RecoverPassword
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import BottomNav from './components/BottomNav';
@@ -47,6 +48,7 @@ const App = () => {
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/recover" element={<RecoverPassword />} /> {/* Add Route */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
               path="/admin/dashboard"

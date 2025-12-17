@@ -10,6 +10,9 @@ const Auth = () => {
     const { login, register } = useAuth();
     const navigate = useNavigate();
 
+    const [securityQuestion, setSecurityQuestion] = useState('');
+    const [securityAnswer, setSecurityAnswer] = useState('');
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -17,7 +20,7 @@ const Auth = () => {
             if (isLogin) {
                 await login(pseudoName, password);
             } else {
-                await register(pseudoName, password);
+                await register(pseudoName, password, { securityQuestion, securityAnswer });
             }
             navigate('/');
         } catch (err) {
@@ -56,9 +59,46 @@ const Auth = () => {
                             required
                         />
                     </div>
+
+                    {!isLogin && (
+                        <>
+                            <div className="input-group">
+                                <label className="label">Security Question (For Recovery)</label>
+                                <select
+                                    className="input"
+                                    value={securityQuestion}
+                                    onChange={(e) => setSecurityQuestion(e.target.value)}
+                                    required
+                                >
+                                    <option value="">Select a question...</option>
+                                    <option value="What is your first pet's name?">What is your first pet's name?</option>
+                                    <option value="What city were you born in?">What city were you born in?</option>
+                                    <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                                    <option value="What was your favorite school teacher's name?">What was your favorite school teacher's name?</option>
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label className="label">Answer</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={securityAnswer}
+                                    onChange={(e) => setSecurityAnswer(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </>
+                    )}
+
                     <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
                         {isLogin ? 'Enter' : 'Create Identity'}
                     </button>
+
+                    {isLogin && (
+                        <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem' }}>
+                            <a href="/recover" style={{ color: '#94a3b8' }}>Forgot Password?</a>
+                        </p>
+                    )}
                 </form>
 
                 <p style={{ textAlign: 'center', marginTop: '1rem', cursor: 'pointer', color: 'var(--primary-color)' }} onClick={() => setIsLogin(!isLogin)}>

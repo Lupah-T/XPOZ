@@ -49,6 +49,14 @@ const userSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    securityQuestion: {
+        type: String,
+        default: '' // e.g. "What is your pet's name?"
+    },
+    securityAnswer: {
+        type: String, // Hashed
+        default: ''
     }
 });
 

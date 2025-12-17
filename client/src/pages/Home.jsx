@@ -171,11 +171,21 @@ const Home = () => {
                         reports.map(report => {
                             if (report.status === 'moderated') {
                                 return (
-                                    <div key={report._id} className="card" style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,0,0,0.05)', border: '1px solid rgba(255,0,0,0.1)' }}>
-                                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🛡️</div>
-                                        <h3 style={{ color: '#f87171' }}>Post Removed</h3>
-                                        <p style={{ color: '#cbd5e1', fontStyle: 'italic' }}>
+                                    <div key={report._id} className="card" style={{
+                                        padding: '3rem 2rem',
+                                        textAlign: 'center',
+                                        background: '#fee2e2',
+                                        border: '2px solid #ef4444',
+                                        borderRadius: '12px',
+                                        color: '#b91c1c'
+                                    }}>
+                                        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🚫</div>
+                                        <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '0 0 1rem 0' }}>Post Removed</h3>
+                                        <p style={{ fontSize: '1.2rem', fontWeight: '500' }}>
                                             "{report.moderationReason || 'This post has been removed by the moderators.'}"
+                                        </p>
+                                        <p style={{ marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>
+                                            -- Admin Team
                                         </p>
                                     </div>
                                 );

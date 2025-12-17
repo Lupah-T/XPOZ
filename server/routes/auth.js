@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_change_me_in_prod';
 
 // Register
 router.post('/register', async (req, res) => {
-    const { pseudoName, password } = req.body;
+    const { pseudoName, password, securityQuestion, securityAnswer } = req.body;
 
     if (!pseudoName || !password) {
         return res.status(400).json({ message: 'Please enter all fields' });
@@ -23,9 +23,16 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        let hashedAnswer = '';
+        if (securityAnswer) {
+            hashedAnswer = await bcrypt.hash(securityAnswer.toLowerCase().trim(), salt);
+        }
+
         const newUser = new User({
             pseudoName,
-            password: hashedPassword
+            password: hashedPassword,
+            securityQuestion: securityQuestion || '',
+            securityAnswer: hashedAnswer || ''
         });
 
         const savedUser = await newUser.save();
@@ -89,6 +96,51 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Recover Password
+router.post('/recover', async (req, res) => {
+    const { pseudoName, securityAnswer, newPassword } = req.body;
+
+    if (!pseudoName) return res.status(400).json({ message: 'Pseudo-name required' });
+
+    try {
+        const user = await User.findOne({ pseudoName });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (!user.securityAnswer) {
+            return res.status(400).json({ message: 'Security question not set for this account.' });
+        }
+
+        // Check answer
+        if (!securityAnswer) return res.status(400).json({ message: 'Answer required' });
+
+        const isMatch = await bcrypt.compare(securityAnswer.toLowerCase().trim(), user.securityAnswer);
+        if (!isMatch) return res.status(400).json({ message: 'Incorrect security answer' });
+
+        // Reset Password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.json({ message: 'Password reset successfully' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Get Security Question for User
+router.get('/security-question/:pseudoName', async (req, res) => {
+    try {
+        const user = await User.findOne({ pseudoName: req.params.pseudoName });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (!user.securityQuestion) return res.status(404).json({ message: 'No security question set' });
+
+        res.json({ question: user.securityQuestion });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Get Current User (Load from Token)
 router.get('/me', async (req, res) => {
     const token = req.header('x-auth-token');
@@ -98,7 +150,7 @@ router.get('/me', async (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findById(decoded.id).select('-password');
         res.json(user);
-    } catch (e) {u
+    } catch (e) {
         res.status(400).json({ message: 'Token is not valid' });
     }
 });
