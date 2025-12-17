@@ -4,72 +4,135 @@ const reportSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
+    trim: true
   },
   description: {
     type: String,
-    required: true,
+    required: true
   },
+
+  // Post type: text (styled), media (multiple files), or mixed
+  postType: {
+    type: String,
+    enum: ['text', 'media', 'mixed', 'legacy'],
+    default: 'legacy'  // For backward compatibility
+  },
+
+  // Text post styling (WhatsApp-style backgrounds)
+  textStyle: {
+    backgroundColor: {
+      type: String,
+      default: '#667eea'
+    },
+    textColor: {
+      type: String,
+      default: '#ffffff'
+    },
+    fontSize: {
+      type: String,
+      default: '24px'
+    },
+    fontFamily: {
+      type: String,
+      default: 'Inter'
+    }
+  },
+
+  // Multiple media files support (2-6 items)
+  media: [{
+    type: {
+      type: String,
+      enum: ['image', 'video']
+    },
+    url: String,
+    thumbnail: String,  // For video previews
+    order: Number
+  }],
+
+  // Legacy fields (for backward compatibility)
   location: {
     type: String,
-    required: true,
+    default: ''
   },
   category: {
     type: String,
-    required: true,
-    enum: ['Infrastructure', 'Utility', 'Safety', 'Other'],
+    enum: ['Infrastructure', 'Utility', 'Safety', 'Other', ''],
+    default: ''
   },
   status: {
     type: String,
     enum: ['pending', 'investigating', 'resolved', 'dismissed'],
-    default: 'pending',
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now,
-  },
-  evidenceUrl: {
-    type: String, // Path to uploaded file
-    default: null
+    default: 'pending'
   },
   evidenceType: {
-    type: String, // 'image', 'video', 'audio', 'none'
+    type: String,
+    enum: ['text', 'image', 'video', 'link', 'audio', 'none'],
     default: 'none'
   },
-  author: {
-    type: mongoose.Schema.Types.ObjectId, // Could be null for legacy anonymous posts
-    ref: 'User',
-    default: null
+  evidenceUrl: {
+    type: String,
+    default: ''
   },
   authorName: {
     type: String,
     default: 'Anonymous'
   },
-  likes: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
   reposts: {
     type: Number,
     default: 0
   },
+
+  // Common fields
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   comments: [{
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
     text: String,
-    timestamp: { type: Date, default: Date.now },
     pseudoName: String,
     avatarUrl: String,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
     replies: [{
-      user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
       text: String,
       pseudoName: String,
       avatarUrl: String,
-      timestamp: { type: Date, default: Date.now }
+      timestamp: {
+        type: Date,
+        default: Date.now
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
     }]
   }],
-  group: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Group',
-    default: null
+  timestamp: {
+    type: Date,
+    default: Date.now
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

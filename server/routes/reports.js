@@ -34,33 +34,73 @@ router.get('/', async (req, res) => {
     }
 });
 
-// POST a new report
-router.post('/', [auth, upload.single('evidence')], async (req, res) => {
-    const { title, description, location, category } = req.body;
+// POST a new report/post
+router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
+    const { title, description, location, category, postType, textStyle } = req.body;
 
-    if (!title || !description || !location || !category) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    const report = new Report({
-        title,
-        description,
-        location,
-        category,
-        author: req.user.id
-    });
-
-    if (req.file) {
-        report.evidenceUrl = req.file.path;
-        if (req.file.mimetype.startsWith('image/')) report.evidenceType = 'image';
-        else if (req.file.mimetype.startsWith('video/')) report.evidenceType = 'video';
-        else if (req.file.mimetype.startsWith('audio/')) report.evidenceType = 'audio';
+    // Validate required fields
+    if (!title || !description) {
+        return res.status(400).json({ message: 'Title and description are required' });
     }
 
     try {
+        let mediaFiles = [];
+
+        // Handle multiple media files
+        if (req.files && req.files.length > 0) {
+            // Validate file count for media posts
+            if (postType === 'media' && req.files.length === 1) {
+                return res.status(400).json({
+                    message: 'Media posts require at least 2 files (or use legacy single-file mode)'
+                });
+            }
+
+            if (req.files.length > 6) {
+                return res.status(400).json({ message: 'Maximum 6 files allowed per post' });
+            }
+
+            // Process each file
+            mediaFiles = req.files.map((file, index) => ({
+                type: file.mimetype.startsWith('image/') ? 'image' : 'video',
+                url: file.path,
+                order: index
+            }));
+        }
+
+        // Create report based on post type
+        const reportData = {
+            title,
+            description,
+            location: location || '',
+            category: category || '',
+            author: req.user.id,
+            postType: postType || ('legacy'),
+        };
+
+        // Add type-specific data
+        if (postType === 'text' && textStyle) {
+            reportData.textStyle = JSON.parse(textStyle);
+        } else if ((postType === 'media' || postType === 'mixed') && mediaFiles.length > 0) {
+            reportData.media = mediaFiles;
+        } else if (req.files && req.files.length === 1) {
+            // Legacy single file support
+            reportData.evidenceUrl = req.files[0].path;
+            reportData.evidenceType = req.files[0].mimetype.startsWith('image/') ? 'image' : 'video';
+        } else if (req.file) {
+            // Fallback for old single upload
+            reportData.evidenceUrl = req.file.path;
+            reportData.evidenceType = req.file.mimetype.startsWith('image/') ? 'image' : 'video';
+        }
+
+        const report = new Report(reportData);
         const newReport = await report.save();
+
+        // Populate author for response
+        await newReport.populate('author', 'pseudoName avatarUrl');
+
         res.status(201).json(newReport);
     } catch (err) {
+        console.error('Create post error:', err);
         res.status(400).json({ message: err.message });
     }
 });
