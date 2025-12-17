@@ -10,6 +10,10 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [processing, setProcessing] = useState(false);
 
+    // New Edit Modes
+    const [mode, setMode] = useState('crop'); // 'crop', 'filters'
+    const [filter, setFilter] = useState(''); // '', 'grayscale(1)', 'sepia(1)', 'contrast(1.5)'
+
     const [videoRange, setVideoRange] = useState({ start: 0, end: 100 }); // Percentage 0-100
     const [videoDuration, setVideoDuration] = useState(0);
     const [videoTime, setVideoTime] = useState({ start: 0, end: 0 }); // Actual seconds
@@ -53,7 +57,8 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
             const croppedImage = await getCroppedImg(
                 URL.createObjectURL(file),
                 croppedAreaPixels,
-                rotation
+                rotation,
+                filter // Pass css filter string
             );
 
             // Create a new File from the blob
@@ -269,6 +274,7 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
                     onCropChange={setCrop}
                     onCropComplete={onCropComplete}
                     onZoomChange={setZoom}
+                    style={{ mediaStyle: { filter: filter } }}
                 />
             </div>
 
@@ -278,122 +284,135 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
                 borderTop: '1px solid rgba(255,255,255,0.1)',
                 background: 'rgba(20, 20, 20, 0.95)'
             }}>
-                {/* Zoom Slider */}
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        fontSize: '0.9rem',
-                        color: '#94a3b8'
-                    }}>
-                        <span style={{ minWidth: '60px' }}>Zoom</span>
-                        <input
-                            type="range"
-                            value={zoom}
-                            min={1}
-                            max={3}
-                            step={0.1}
-                            onChange={(e) => setZoom(e.target.value)}
-                            style={{ flex: 1 }}
-                        />
-                        <span style={{ minWidth: '40px', textAlign: 'right' }}>
-                            {Math.round(zoom * 100)}%
-                        </span>
-                    </label>
+                {/* Mode Switcher */}
+                <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '1rem' }}>
+                    <button
+                        onClick={() => setMode('crop')}
+                        style={{ flex: 1, padding: '0.5rem', background: 'transparent', border: 'none', color: mode === 'crop' ? '#a855f7' : '#94a3b8', borderBottom: mode === 'crop' ? '2px solid #a855f7' : 'none', cursor: 'pointer' }}
+                    >
+                        Crop & Rotate
+                    </button>
+                    <button
+                        onClick={() => setMode('filters')}
+                        style={{ flex: 1, padding: '0.5rem', background: 'transparent', border: 'none', color: mode === 'filters' ? '#a855f7' : '#94a3b8', borderBottom: mode === 'filters' ? '2px solid #a855f7' : 'none', cursor: 'pointer' }}
+                    >
+                        Filters
+                    </button>
                 </div>
 
-                {/* Rotation Slider */}
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        fontSize: '0.9rem',
-                        color: '#94a3b8'
-                    }}>
-                        <span style={{ minWidth: '60px' }}>Rotate</span>
-                        <input
-                            type="range"
-                            value={rotation}
-                            min={0}
-                            max={360}
-                            step={1}
-                            onChange={(e) => setRotation(e.target.value)}
-                            style={{ flex: 1 }}
-                        />
-                        <span style={{ minWidth: '40px', textAlign: 'right' }}>
-                            {rotation}°
-                        </span>
-                    </label>
-                </div>
+                {mode === 'crop' && (
+                    <>
+                        {/* Zoom Slider */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            {/* ... existing zoom ... */}
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.9rem', color: '#94a3b8' }}>
+                                <span style={{ minWidth: '60px' }}>Zoom</span>
+                                <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={(e) => setZoom(e.target.value)} style={{ flex: 1 }} />
+                                <span style={{ minWidth: '40px', textAlign: 'right' }}>{Math.round(zoom * 100)}%</span>
+                            </label>
+                        </div>
+                        {/* Rotation Slider */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.9rem', color: '#94a3b8' }}>
+                                <span style={{ minWidth: '60px' }}>Rotate</span>
+                                <input type="range" value={rotation} min={0} max={360} step={1} onChange={(e) => setRotation(e.target.value)} style={{ flex: 1 }} />
+                                <span style={{ minWidth: '40px', textAlign: 'right' }}>{rotation}°</span>
+                            </label>
+                        </div>
+                        {/* Aspect Ratio Controls */}
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                            {[
+                                { label: 'Free', value: null },
+                                { label: '1:1', value: 1 / 1 },
+                                { label: '4:5', value: 4 / 5 },
+                                { label: '16:9', value: 16 / 9 }
+                            ].map((ratio) => (
+                                <button
+                                    key={ratio.label}
+                                    onClick={() => setAspect(ratio.value)}
+                                    className="btn"
+                                    style={{
+                                        background: aspect === ratio.value ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                                        padding: '0.4rem 0.8rem',
+                                        fontSize: '0.8rem',
+                                        border: 'none',
+                                        color: 'white',
+                                        borderRadius: '4px'
+                                    }}
+                                >
+                                    {ratio.label}
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
 
-                {/* Aspect Ratio Controls */}
-                <div style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    justifyContent: 'center',
-                    marginBottom: '1rem',
-                    flexWrap: 'wrap'
-                }}>
-                    {[
-                        { label: 'Free', value: null },
-                        { label: '1:1', value: 1 / 1 },
-                        { label: '4:5', value: 4 / 5 },
-                        { label: '16:9', value: 16 / 9 }
-                    ].map((ratio) => (
+                {mode === 'filters' && (
+                    <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                        {[
+                            { label: 'Normal', value: '' },
+                            { label: 'B&W', value: 'grayscale(1)' },
+                            { label: 'Sepia', value: 'sepia(1)' },
+                            { label: 'Contrast', value: 'contrast(1.5)' },
+                            { label: 'Vivid', value: 'saturate(1.5)' },
+                            { label: 'Warm', value: 'sepia(0.5) saturate(1.2)' },
+                            { label: 'Cool', value: 'hue-rotate(180deg) opacity(0.8)' },
+                        ].map(f => (
+                            <button
+                                key={f.label}
+                                onClick={() => setFilter(f.value)}
+                                style={{
+                                    background: filter === f.value ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                                    border: 'none',
+                                    color: 'white',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '8px',
+                                    whiteSpace: 'nowrap',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {f.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {mode === 'crop' && (
+                    <div style={{
+                        display: 'flex',
+                        gap: '0.5rem',
+                        justifyContent: 'center',
+                        flexWrap: 'wrap'
+                    }}>
                         <button
-                            key={ratio.label}
-                            onClick={() => setAspect(ratio.value)}
+                            onClick={handleRotate}
                             className="btn"
                             style={{
-                                background: aspect === ratio.value ? '#a855f7' : 'rgba(255,255,255,0.1)',
-                                padding: '0.4rem 0.8rem',
-                                fontSize: '0.8rem',
-                                border: 'none',
-                                color: 'white',
-                                borderRadius: '4px'
+                                background: 'rgba(255,255,255,0.1)',
+                                padding: '0.5rem 1rem',
+                                fontSize: '0.9rem'
                             }}
                         >
-                            {ratio.label}
+                            🔄 Rotate 90°
                         </button>
-                    ))}
-                </div>
-
-                {/* Quick Actions */}
-                <div style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    justifyContent: 'center',
-                    flexWrap: 'wrap'
-                }}>
-                    <button
-                        onClick={handleRotate}
-                        className="btn"
-                        style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            padding: '0.5rem 1rem',
-                            fontSize: '0.9rem'
-                        }}
-                    >
-                        🔄 Rotate 90°
-                    </button>
-                    <button
-                        onClick={() => {
-                            setZoom(1);
-                            setRotation(0);
-                            setAspect(null);
-                        }}
-                        className="btn"
-                        style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            padding: '0.5rem 1rem',
-                            fontSize: '0.9rem'
-                        }}
-                    >
-                        ⟲ Reset All
-                    </button>
-                </div>
+                        <button
+                            onClick={() => {
+                                setZoom(1);
+                                setRotation(0);
+                                setAspect(null);
+                                setFilter('');
+                            }}
+                            className="btn"
+                            style={{
+                                background: 'rgba(255,255,255,0.1)',
+                                padding: '0.5rem 1rem',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            ⟲ Reset All
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

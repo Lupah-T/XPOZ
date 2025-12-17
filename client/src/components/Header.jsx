@@ -7,6 +7,43 @@ const Header = () => {
     const { user } = useAuth();
     const [showAnnouncements, setShowAnnouncements] = React.useState(false);
     const [AnnouncementModal, setAnnouncementModal] = React.useState(null);
+    const [hasNewAnnouncements, setHasNewAnnouncements] = React.useState(false);
+
+    React.useEffect(() => {
+        // Check for new announcements
+        const checkAnnouncements = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/announcements`);
+                const data = await res.json();
+                if (data && data.length > 0) {
+                    const lastCount = parseInt(localStorage.getItem('announcementCount') || '0');
+                    if (data.length > lastCount) {
+                        setHasNewAnnouncements(true);
+                    }
+                    // We update the count ONLY when user opens the modal ideally, 
+                    // but for simplicity, we treat "unseen count" as data.length > stored.
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        checkAnnouncements();
+    }, []);
+
+    const handleOpenAnnouncements = () => {
+        setShowAnnouncements(true);
+        setHasNewAnnouncements(false);
+        // Update local storage to current count (we need to fetch or know count)
+        // Re-fetching or just clearing badge. 
+        // Better: Fetch again inside modal, but here we just clear badge.
+        // We really need the count to save it. Let's assume user sees all.
+        // Actually, let's fetch count again to save it.
+        fetch(`${API_URL}/api/announcements`)
+            .then(res => res.json())
+            .then(data => {
+                localStorage.setItem('announcementCount', data.length.toString());
+            });
+    };
 
     // Lazy load modal to avoid circular dependency or simple performance
     React.useEffect(() => {
@@ -61,12 +98,24 @@ const Header = () => {
                             <Link to="/admin/dashboard" className="nav-icon" title="Admin Dashboard">🛡️</Link>
                         )}
                         <button
-                            onClick={() => setShowAnnouncements(true)}
+                            onClick={handleOpenAnnouncements}
                             className="nav-icon"
                             title="Announcements"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', position: 'relative' }}
                         >
                             📢
+                            {hasNewAnnouncements && (
+                                <span style={{
+                                    position: 'absolute',
+                                    top: '-2px',
+                                    right: '-2px',
+                                    width: '10px',
+                                    height: '10px',
+                                    background: '#ef4444',
+                                    borderRadius: '50%',
+                                    border: '2px solid white'
+                                }}></span>
+                            )}
                         </button>
                         <Link to={user ? `/profile/${user.id}` : '/auth'} className="nav-icon" title="Profile">
                             <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#cbd5e1', overflow: 'hidden' }}>

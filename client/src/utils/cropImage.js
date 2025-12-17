@@ -35,6 +35,7 @@ export default async function getCroppedImg(
     imageSrc,
     pixelCrop,
     rotation = 0,
+    filter = '', // New argument
     flip = { horizontal: false, vertical: false }
 ) {
     const image = await createImage(imageSrc);
@@ -70,6 +71,9 @@ export default async function getCroppedImg(
     ctx.translate(-image.width / 2, -image.height / 2);
 
     // draw rotated image
+    if (filter) {
+        ctx.filter = filter;
+    }
     ctx.drawImage(image, 0, 0);
 
     // croppedAreaPixels values are bounding box relative

@@ -6,6 +6,7 @@ import { API_URL } from '../config';
 
 const Home = () => {
     const [reports, setReports] = useState([]);
+    const [lightboxMedia, setLightboxMedia] = useState(null); // { url, type }
     const { user, token } = useAuth();
 
     const fetchReports = async () => {
@@ -179,11 +180,11 @@ const Home = () => {
                                 </div>
 
                                 {/* Media */}
-                                <div style={{ width: '100%', background: '#000', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                <div style={{ width: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                                     {report.postType === 'text' ? (
                                         <div style={{
                                             width: '100%',
-                                            minHeight: '300px',
+                                            minHeight: '200px', // Smaller min-height for short text
                                             background: report.textStyle?.backgroundColor || '#667eea',
                                             color: report.textStyle?.textColor || '#fff',
                                             fontFamily: report.textStyle?.fontFamily || 'Inter',
@@ -210,10 +211,15 @@ const Home = () => {
                                                             endTime={item.metadata?.endTime}
                                                         />
                                                     ) : (
-                                                        <img src={`${API_URL}/${item.url}`} alt="Post content" style={{ width: '100%', height: 'auto', maxHeight: '600px', objectFit: 'contain' }} />
+                                                        <img
+                                                            src={`${API_URL}/${item.url}`}
+                                                            alt="Post content"
+                                                            onClick={() => setLightboxMedia({ url: `${API_URL}/${item.url}`, type: 'image' })}
+                                                            style={{ width: '100%', height: 'auto', maxHeight: '80vh', objectFit: 'contain', cursor: 'zoom-in' }}
+                                                        />
                                                     )}
                                                     {report.media.length > 1 && (
-                                                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '12px', fontSize: '0.8rem' }}>
+                                                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '12px', fontSize: '0.8rem', pointerEvents: 'none' }}>
                                                             {idx + 1}/{report.media.length}
                                                         </div>
                                                     )}
@@ -224,10 +230,15 @@ const Home = () => {
                                         // Legacy Support
                                         <>
                                             {report.evidenceType === 'image' && (
-                                                <img src={`${API_URL}/${report.evidenceUrl}`} alt="Evidence" style={{ width: '100%', height: 'auto', maxHeight: '600px', objectFit: 'contain' }} />
+                                                <img
+                                                    src={`${API_URL}/${report.evidenceUrl}`}
+                                                    alt="Evidence"
+                                                    onClick={() => setLightboxMedia({ url: `${API_URL}/${report.evidenceUrl}`, type: 'image' })}
+                                                    style={{ width: '100%', height: 'auto', maxHeight: '80vh', objectFit: 'contain', cursor: 'zoom-in' }}
+                                                />
                                             )}
                                             {report.evidenceType === 'video' && (
-                                                <video controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '100%', maxHeight: '600px' }} />
+                                                <video controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '100%', maxHeight: '80vh' }} />
                                             )}
                                             {report.evidenceType === 'audio' && (
                                                 <audio controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '90%' }} />
@@ -331,6 +342,29 @@ const Home = () => {
                 </div>
 
             </main>
+
+            {/* Lightbox Modal */}
+            {lightboxMedia && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.95)',
+                        zIndex: 99999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'zoom-out'
+                    }}
+                    onClick={() => setLightboxMedia(null)}
+                >
+                    <img
+                        src={lightboxMedia.url}
+                        style={{ maxWidth: '100%', maxHeight: '100vh', objectFit: 'contain' }}
+                        alt="Full view"
+                    />
+                </div>
+            )}
         </>
     );
 };
