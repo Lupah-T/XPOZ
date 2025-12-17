@@ -3,17 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 import MediaPreview from './MediaPreview';
+import TextPostCreator from './TextPostCreator';
 
 const ReportForm = () => {
     const { token, user } = useAuth();
     const navigate = useNavigate();
 
+    const [postMode, setPostMode] = useState('media'); // 'media' or 'text'
     const [formData, setFormData] = useState({
         title: '',
         description: ''
     });
     const [mediaFiles, setMediaFiles] = useState([]);
     const [editingIndex, setEditingIndex] = useState(null);
+    const [showTextCreator, setShowTextCreator] = useState(false);
+    const [textPostData, setTextPostData] = useState(null);
     const [status, setStatus] = useState(null);
     const [message, setMessage] = useState('');
     const [uploading, setUpload] = useState(false);
@@ -70,15 +74,20 @@ const ReportForm = () => {
         setEditingIndex(null);
     };
 
+    const handleTextPostSave = (data) => {
+        setTextPostData(data);
+        setShowTextCreator(false);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setUpload(true);
         setStatus('loading');
         setMessage('');
 
-        // Validate
-        if (mediaFiles.length === 1) {
-            alert('Please add at least 2 media files, or remove all media for text-only post');
+        // Validate based on mode
+        if (postMode === 'media' && mediaFiles.length === 1) {
+            alert('Please add at least 2 media files, or switch to text mode');
             setUpload(false);
             setStatus(null);
             return;
@@ -88,14 +97,18 @@ const ReportForm = () => {
         data.append('title', formData.title);
         data.append('description', formData.description);
 
-        // Determine post type
-        if (mediaFiles.length >= 2) {
+        // Determine post type and add data
+        if (postMode === 'text' && textPostData) {
+            data.append('postType', 'text');
+            data.append('textStyle', JSON.stringify(textPostData.style));
+        } else if (mediaFiles.length >= 2) {
             data.append('postType', 'media');
             // Append all media files
             mediaFiles.forEach((item) => {
                 data.append('media', item.file);
             });
         } else {
+            // Fallback for posts with 0 media files (if not text post)
             data.append('postType', 'legacy');
         }
 
@@ -119,6 +132,7 @@ const ReportForm = () => {
             // Reset form
             setFormData({ title: '', description: '' });
             setMediaFiles([]);
+            setTextPostData(null);
 
             // Redirect to home after 1.5s
             setTimeout(() => {
@@ -171,6 +185,49 @@ const ReportForm = () => {
                 )}
 
                 <form onSubmit={handleSubmit}>
+                    {/* Mode Selector */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '0.5rem',
+                        marginBottom: '1.5rem',
+                        borderBottom: '2px solid rgba(255,255,255,0.1)',
+                        paddingBottom: '0.5rem'
+                    }}>
+                        <button
+                            type="button"
+                            onClick={() => setPostMode('media')}
+                            style={{
+                                flex: 1,
+                                padding: '0.75rem',
+                                background: postMode === 'media' ? '#a855f7' : 'transparent',
+                                border: 'none',
+                                borderRadius: '6px',
+                                color: 'white',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            📸 Media Post
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPostMode('text')}
+                            style={{
+                                flex: 1,
+                                padding: '0.75rem',
+                                background: postMode === 'text' ? '#a855f7' : 'transparent',
+                                border: 'none',
+                                borderRadius: '6px',
+                                color: 'white',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            ✨ Text Post
+                        </button>
+                    </div>
                     {/* Title */}
                     <div className="input-group">
                         <label className="label" htmlFor="title">Title</label>
@@ -203,167 +260,168 @@ const ReportForm = () => {
                         />
                     </div>
 
-                    {/* Media Upload */}
-                    <div className="input-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <label className="label" style={{ margin: 0 }}>
-                                Media ({mediaFiles.length}/6)
-                            </label>
-                            {mediaFiles.length < 6 && (
-                                <label
-                                    htmlFor="media-input"
-                                    className="btn"
-                                    style={{
-                                        background: '#a855f7',
-                                        padding: '0.4rem 1rem',
-                                        fontSize: '0.85rem',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    + Add Media
+                    {/* Media Upload - Only show in media mode */}
+                    {postMode === 'media' && (
+                        <div className="input-group">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label className="label" style={{ margin: 0 }}>
+                                    Media ({mediaFiles.length}/6)
                                 </label>
-                            )}
-                        </div>
-
-                        <input
-                            type="file"
-                            id="media-input"
-                            accept="image/*,video/*"
-                            multiple
-                            onChange={handleFileSelect}
-                            style={{ display: 'none' }}
-                        />
-
-                        {/* Media Grid */}
-                        {mediaFiles.length > 0 && (
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                                gap: '0.75rem',
-                                marginTop: '1rem'
-                            }}>
-                                {mediaFiles.map((item, index) => (
-                                    <div
-                                        key={index}
+                                {mediaFiles.length < 6 && (
+                                    <label
+                                        htmlFor="media-input"
+                                        className="btn"
                                         style={{
-                                            position: 'relative',
-                                            aspectRatio: '1/1',
-                                            borderRadius: '8px',
-                                            overflow: 'hidden',
-                                            background: '#1e293b',
-                                            border: '2px solid rgba(168, 85, 247, 0.3)'
+                                            background: '#a855f7',
+                                            padding: '0.4rem 1rem',
+                                            fontSize: '0.85rem',
+                                            cursor: 'pointer'
                                         }}
                                     >
-                                        {/* Preview */}
-                                        {item.type === 'image' ? (
-                                            <img
-                                                src={item.preview}
-                                                alt={`Media ${index + 1}`}
-                                                style={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    objectFit: 'cover'
-                                                }}
-                                            />
-                                        ) : (
-                                            <video
-                                                src={item.preview}
-                                                style={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    objectFit: 'cover'
-                                                }}
-                                            />
-                                        )}
+                                        + Add Media
+                                    </label>
+                                )}
+                            </div>
 
-                                        {/* Order Badge */}
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: '0.5rem',
-                                            left: '0.5rem',
-                                            background: 'rgba(0,0,0,0.7)',
-                                            color: 'white',
-                                            padding: '0.25rem 0.5rem',
-                                            borderRadius: '4px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '600'
-                                        }}>
-                                            {index + 1}
-                                        </div>
+                            <input
+                                type="file"
+                                id="media-input"
+                                accept="image/*,video/*"
+                                multiple
+                                onChange={handleFileSelect}
+                                style={{ display: 'none' }}
+                            />
 
-                                        {/* Edited Badge */}
-                                        {item.edited && (
+                            {/* Media Grid */}
+                            {mediaFiles.length > 0 && (
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                                    gap: '0.75rem',
+                                    marginTop: '1rem'
+                                }}>
+                                    {mediaFiles.map((item, index) => (
+                                        <div
+                                            key={index}
+                                            style={{
+                                                position: 'relative',
+                                                aspectRatio: '1/1',
+                                                borderRadius: '8px',
+                                                overflow: 'hidden',
+                                                background: '#1e293b',
+                                                border: '2px solid rgba(168, 85, 247, 0.3)'
+                                            }}
+                                        >
+                                            {/* Preview */}
+                                            {item.type === 'image' ? (
+                                                <img
+                                                    src={item.preview}
+                                                    alt={`Media ${index + 1}`}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'cover'
+                                                    }}
+                                                />
+                                            ) : (
+                                                <video
+                                                    src={item.preview}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'cover'
+                                                    }}
+                                                />
+                                            )}
+
+                                            {/* Order Badge */}
                                             <div style={{
                                                 position: 'absolute',
                                                 top: '0.5rem',
-                                                right: '0.5rem',
-                                                background: '#10b981',
+                                                left: '0.5rem',
+                                                background: 'rgba(0,0,0,0.7)',
                                                 color: 'white',
                                                 padding: '0.25rem 0.5rem',
                                                 borderRadius: '4px',
-                                                fontSize: '0.7rem'
+                                                fontSize: '0.75rem',
+                                                fontWeight: '600'
                                             }}>
-                                                ✓ Edited
+                                                {index + 1}
                                             </div>
-                                        )}
 
-                                        {/* Actions */}
-                                        <div style={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-                                            padding: '2rem 0.5rem 0.5rem',
-                                            display: 'flex',
-                                            gap: '0.5rem',
-                                            justifyContent: 'center'
-                                        }}>
-                                            {item.type === 'image' && (
+                                            {/* Edited Badge */}
+                                            {item.edited && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '0.5rem',
+                                                    right: '0.5rem',
+                                                    background: '#10b981',
+                                                    color: 'white',
+                                                    padding: '0.25rem 0.5rem',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.7rem'
+                                                }}>
+                                                    ✓ Edited
+                                                </div>
+                                            )}
+
+                                            {/* Actions */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: 0,
+                                                left: 0,
+                                                right: 0,
+                                                background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                                                padding: '2rem 0.5rem 0.5rem',
+                                                display: 'flex',
+                                                gap: '0.5rem',
+                                                justifyContent: 'center'
+                                            }}>
+                                                {item.type === 'image' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEditMedia(index)}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.2)',
+                                                            border: 'none',
+                                                            padding: '0.4rem 0.75rem',
+                                                            borderRadius: '4px',
+                                                            color: 'white',
+                                                            fontSize: '0.75rem',
+                                                            cursor: 'pointer',
+                                                            backdropFilter: 'blur(4px)'
+                                                        }}
+                                                    >
+                                                        ✏️ Edit
+                                                    </button>
+                                                )}
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleEditMedia(index)}
+                                                    onClick={() => handleRemoveMedia(index)}
                                                     style={{
-                                                        background: 'rgba(255,255,255,0.2)',
+                                                        background: 'rgba(239, 68, 68, 0.8)',
                                                         border: 'none',
                                                         padding: '0.4rem 0.75rem',
                                                         borderRadius: '4px',
                                                         color: 'white',
                                                         fontSize: '0.75rem',
-                                                        cursor: 'pointer',
-                                                        backdropFilter: 'blur(4px)'
+                                                        cursor: 'pointer'
                                                     }}
                                                 >
-                                                    ✏️ Edit
+                                                    🗑️ Remove
                                                 </button>
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveMedia(index)}
-                                                style={{
-                                                    background: 'rgba(239, 68, 68, 0.8)',
-                                                    border: 'none',
-                                                    padding: '0.4rem 0.75rem',
-                                                    borderRadius: '4px',
-                                                    color: 'white',
-                                                    fontSize: '0.75rem',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                🗑️ Remove
-                                            </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
 
-                        <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '0.5rem' }}>
-                            {mediaFiles.length === 0 ? 'Add 2-6 images or videos (optional)' :
-                                mediaFiles.length === 1 ? '⚠️ Add at least one more file or remove media' :
-                                    `${mediaFiles.length} files selected`}
-                        </small>
-                    </div>
+                            <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '0.5rem' }}>
+                                {mediaFiles.length === 0 ? 'Add 2-6 images or videos (optional)' :
+                                    mediaFiles.length === 1 ? '⚠️ Add at least one more file or remove media' :
+                                        `${mediaFiles.length} files selected`}
+                            </small>
+                        </div>
 
                     {/* Submit Button */}
                     <button
@@ -384,6 +442,14 @@ const ReportForm = () => {
                     type={mediaFiles[editingIndex].type}
                     onSave={handleSaveEditedMedia}
                     onCancel={() => setEditingIndex(null)}
+                />
+            )}
+
+            {/* Text Post Creator Modal */}
+            {showTextCreator && (
+                <TextPostCreator
+                    onSave={handleTextPostSave}
+                    onCancel={() => setShowTextCreator(false)}
                 />
             )}
         </>
