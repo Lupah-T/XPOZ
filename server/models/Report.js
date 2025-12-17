@@ -46,7 +46,11 @@ const reportSchema = new mongoose.Schema({
     },
     url: String,
     thumbnail: String,  // For video previews
-    order: Number
+    order: Number,
+    metadata: {
+      startTime: Number,
+      endTime: Number
+    }
   }],
 
   // Legacy fields (for backward compatibility)

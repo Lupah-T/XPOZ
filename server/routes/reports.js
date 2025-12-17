@@ -96,11 +96,22 @@ router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
                     }
                 }
 
+                let metadata = null;
+                const metadataKey = `metadata_${index}`;
+                if (req.body[metadataKey]) {
+                    try {
+                        metadata = JSON.parse(req.body[metadataKey]);
+                    } catch (e) {
+                        console.error('Error parsing metadata:', e);
+                    }
+                }
+
                 return {
                     type: isVideo ? 'video' : 'image',
                     url: file.path,
                     thumbnail: thumbnailPath,
-                    order: index
+                    order: index,
+                    metadata // { startTime, endTime }
                 };
             }));
         }
