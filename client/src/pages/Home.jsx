@@ -95,7 +95,7 @@ const Home = () => {
     const handleDelete = async (reportId, isAdminMod = false) => {
         let reason = null;
         if (isAdminMod) {
-            reason = prompt('Reason for removal (e.g., Irrelevant content, Spam):', 'Irrelevant content: This post is not a real-world fault.');
+            reason = prompt('Reason for removal (e.g., Irrelevant content):', 'Irrelevant content: This post does not meet the platform guidelines.');
             if (reason === null) return; // Cancelled
         } else {
             if (!window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
@@ -104,19 +104,30 @@ const Home = () => {
         }
 
         try {
-            const res = await fetch(`${API_URL}/api/reports/${reportId}`, {
-                method: 'DELETE',
-                headers: {
-                    'x-auth-token': token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ reason })
-            });
+            let res;
+            if (isAdminMod) {
+                // Soft Delete (Moderate) via PUT
+                res = await fetch(`${API_URL}/api/reports/${reportId}/moderate`, {
+                    method: 'PUT',
+                    headers: {
+                        'x-auth-token': token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason })
+                });
+            } else {
+                // Hard Delete via DELETE
+                res = await fetch(`${API_URL}/api/reports/${reportId}`, {
+                    method: 'DELETE',
+                    headers: { 'x-auth-token': token }
+                });
+            }
 
             if (res.ok) {
                 if (isAdminMod) {
-                    // Update state to show moderated status instead of removing
-                    setReports(reports.map(r => r._id === reportId ? { ...r, status: 'moderated', moderationReason: reason } : r));
+                    const data = await res.json();
+                    // Update state to show moderated status
+                    setReports(reports.map(r => r._id === reportId ? { ...r, status: 'moderated', moderationReason: data.report?.moderationReason || reason } : r));
                     alert('Post moderated successfully');
                 } else {
                     // Remove the report from state
@@ -125,11 +136,11 @@ const Home = () => {
                 }
             } else {
                 const error = await res.json();
-                alert(error.message || 'Failed to delete post');
+                alert(error.message || 'Failed to delete/moderate post');
             }
         } catch (err) {
             console.error(err);
-            alert('Error deleting post');
+            alert('Error processing request');
         }
     };
 
@@ -192,7 +203,7 @@ const Home = () => {
                                         {/* Delete Button (for author or admin) */}
                                         {user && (report.author?._id === user.id || user.role === 'admin') && (
                                             <button
-                                                onClick={() => handleDelete(report._id, user.role === 'admin' && report.author?._id !== user.id)}
+                                                onClick={() => handleDelete(report._id, user.role === 'admin')}
                                                 style={{
                                                     background: 'transparent',
                                                     border: 'none',
