@@ -2,91 +2,231 @@ import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
 
-const [videoRange, setVideoRange] = useState({ start: 0, end: 100 }); // Percentage 0-100
-const [videoDuration, setVideoDuration] = useState(0);
-const [videoTime, setVideoTime] = useState({ start: 0, end: 0 }); // Actual seconds
+const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [rotation, setRotation] = useState(0);
+    const [aspect, setAspect] = useState(null); // 'null' for Free/All-round crop
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+    const [processing, setProcessing] = useState(false);
 
-// Fix for "black screen" - ensure container has dimensions
-const containerStyle = {
-    position: 'fixed',
-    inset: 0,
-    backgroundColor: '#000000',
-    zIndex: 99999, // High z-index to cover everything
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh', // Force full viewport height
-    width: '100vw'
-};
+    const [videoRange, setVideoRange] = useState({ start: 0, end: 100 }); // Percentage 0-100
+    const [videoDuration, setVideoDuration] = useState(0);
+    const [videoTime, setVideoTime] = useState({ start: 0, end: 0 }); // Actual seconds
 
-const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-}, []);
+    // Fix for "black screen" - ensure container has dimensions
+    const containerStyle = {
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: '#000000',
+        zIndex: 99999, // High z-index to cover everything
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh', // Force full viewport height
+        width: '100vw'
+    };
 
-const handleSave = async () => {
-    if (type === 'video') {
-        // For video, we save the metadata (startTime, endTime)
-        // We don't actually crop the file here to save performance
-        onSave(file, {
-            startTime: videoTime.start,
-            endTime: videoTime.end
-        });
-        return;
-    }
+    const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
 
-    try {
-        setProcessing(true);
-        if (!croppedAreaPixels || croppedAreaPixels.width === 0 || croppedAreaPixels.height === 0) {
-            // If user clicks save too fast or there's an issue
-            alert('Please adjust the crop area slightly before saving.');
-            setProcessing(false);
+    const handleSave = async () => {
+        if (type === 'video') {
+            // For video, we save the metadata (startTime, endTime)
+            // We don't actually crop the file here to save performance
+            onSave(file, {
+                startTime: videoTime.start,
+                endTime: videoTime.end
+            });
             return;
         }
 
-        const croppedImage = await getCroppedImg(
-            URL.createObjectURL(file),
-            croppedAreaPixels,
-            rotation
-        );
+        try {
+            setProcessing(true);
+            if (!croppedAreaPixels || croppedAreaPixels.width === 0 || croppedAreaPixels.height === 0) {
+                // If user clicks save too fast or there's an issue
+                alert('Please adjust the crop area slightly before saving.');
+                setProcessing(false);
+                return;
+            }
 
-        // Create a new File from the blob
-        const croppedFile = new File([croppedImage], file.name, {
-            type: 'image/jpeg',
-            lastModified: Date.now()
-        });
+            const croppedImage = await getCroppedImg(
+                URL.createObjectURL(file),
+                croppedAreaPixels,
+                rotation
+            );
 
-        onSave(croppedFile);
-    } catch (e) {
-        console.error('Error cropping image:', e);
-        alert('Failed to crop image');
-    } finally {
-        setProcessing(false);
-    }
-};
+            // Create a new File from the blob
+            const croppedFile = new File([croppedImage], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+            });
 
-const handleRotate = () => {
-    setRotation((prev) => (prev + 90) % 360);
-};
-
-const handleVideoLoadedMetadata = (e) => {
-    const duration = e.target.duration;
-    setVideoDuration(duration);
-    setVideoTime({ start: 0, end: duration });
-};
-
-const handleVideoTimeUpdate = (e) => {
-    const currentTime = e.target.currentTime;
-    if (currentTime < videoTime.start || currentTime > videoTime.end) {
-        e.target.currentTime = videoTime.start;
-    }
-};
-
-// Video Trimmer Render
-if (type === 'video') {
-    const formatTime = (seconds) => {
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        return `${m}:${s.toString().padStart(2, '0')}`;
+            onSave(croppedFile);
+        } catch (e) {
+            console.error('Error cropping image:', e);
+            alert('Failed to crop image');
+        } finally {
+            setProcessing(false);
+        }
     };
+
+    const handleRotate = () => {
+        setRotation((prev) => (prev + 90) % 360);
+    };
+
+    const handleVideoLoadedMetadata = (e) => {
+        const duration = e.target.duration;
+        setVideoDuration(duration);
+        setVideoTime({ start: 0, end: duration });
+    };
+
+    const handleVideoTimeUpdate = (e) => {
+        const currentTime = e.target.currentTime;
+        if (currentTime < videoTime.start || currentTime > videoTime.end) {
+            e.target.currentTime = videoTime.start;
+        }
+    };
+
+    // Video Trimmer Render
+    if (type === 'video') {
+        const formatTime = (seconds) => {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        };
+
+        return (
+            <div style={containerStyle}>
+                {/* Header */}
+                <div style={{
+                    padding: '1rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(0,0,0,0.8)'
+                }}>
+                    <button
+                        onClick={onCancel}
+                        className="btn"
+                        style={{ background: 'transparent', padding: '0.5rem 1rem', color: 'white' }}
+                    >
+                        Cancel
+                    </button>
+                    <h3 style={{ margin: 0, color: 'white' }}>Trim Video</h3>
+                    <button
+                        onClick={handleSave}
+                        className="btn"
+                        style={{ background: '#a855f7', padding: '0.5rem 1.5rem', color: 'white', border: 'none', borderRadius: '4px' }}
+                    >
+                        Done
+                    </button>
+                </div>
+
+                {/* Video Preview */}
+                <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1rem',
+                    overflow: 'hidden'
+                }}>
+                    <video
+                        src={URL.createObjectURL(file)}
+                        controls={false} // Custom controls
+                        autoPlay
+                        loop
+                        muted
+                        onLoadedMetadata={handleVideoLoadedMetadata}
+                        onTimeUpdate={handleVideoTimeUpdate}
+                        style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+                        }}
+                    />
+                </div>
+
+                {/* Trimmer Controls */}
+                <div style={{
+                    padding: '1.5rem',
+                    background: 'rgba(20, 20, 20, 0.95)',
+                    borderTop: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                        <span>Start: {formatTime(videoTime.start)}</span>
+                        <span>End: {formatTime(videoTime.end)}</span>
+                    </div>
+
+                    {/* Simple Range Slider Simulation */}
+                    <div style={{ position: 'relative', height: '40px', display: 'flex', alignItems: 'center' }}>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={videoRange.start}
+                            onChange={(e) => {
+                                const val = Math.min(Number(e.target.value), videoRange.end - 5);
+                                setVideoRange(prev => ({ ...prev, start: val }));
+                                setVideoTime(prev => ({ ...prev, start: (val / 100) * videoDuration }));
+                            }}
+                            style={{
+                                position: 'absolute',
+                                width: '100%',
+                                zIndex: 2,
+                                pointerEvents: 'none', // Allow clicking through? No, this is tricky in pure CSS/JS without a lib.
+                                // We'll just do two full width sliders on top of each other
+                                opacity: 0.5
+                            }}
+                        />
+                        {/* 
+                            Actually, dual range sliders are hard with default inputs. 
+                            Let's use two distinct inputs: "Trim Start" and "Trim End" for MVP reliability.
+                         */}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={{ color: 'white', display: 'block', marginBottom: '0.5rem' }}>Start Time</label>
+                            <input
+                                type="range"
+                                min="0"
+                                max={videoDuration}
+                                step="0.1"
+                                value={videoTime.start}
+                                onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    if (val < videoTime.end) setVideoTime({ ...videoTime, start: val });
+                                }}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ color: 'white', display: 'block', marginBottom: '0.5rem' }}>End Time</label>
+                            <input
+                                type="range"
+                                min="0"
+                                max={videoDuration}
+                                step="0.1"
+                                value={videoTime.end}
+                                onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    if (val > videoTime.start) setVideoTime({ ...videoTime, end: val });
+                                }}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                    </div>
+
+                    <small style={{ display: 'block', textAlign: 'center', marginTop: '1rem', color: '#64748b' }}>
+                        Drag sliders to trim the video
+                    </small>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={containerStyle}>
@@ -97,298 +237,166 @@ if (type === 'video') {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 borderBottom: '1px solid rgba(255,255,255,0.1)',
-                background: 'rgba(0,0,0,0.8)'
+                background: 'rgba(0,0,0,0.8)' // Consistent styling
             }}>
                 <button
                     onClick={onCancel}
                     className="btn"
                     style={{ background: 'transparent', padding: '0.5rem 1rem', color: 'white' }}
+                    disabled={processing}
                 >
                     Cancel
                 </button>
-                <h3 style={{ margin: 0, color: 'white' }}>Trim Video</h3>
+                <h3 style={{ margin: 0, color: 'white' }}>Edit Photo</h3>
                 <button
                     onClick={handleSave}
                     className="btn"
                     style={{ background: '#a855f7', padding: '0.5rem 1.5rem', color: 'white', border: 'none', borderRadius: '4px' }}
+                    disabled={processing}
                 >
-                    Done
+                    {processing ? 'Saving...' : 'Done'}
                 </button>
             </div>
 
-            {/* Video Preview */}
-            <div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '1rem',
-                overflow: 'hidden'
-            }}>
-                <video
-                    src={URL.createObjectURL(file)}
-                    controls={false} // Custom controls
-                    autoPlay
-                    loop
-                    muted
-                    onLoadedMetadata={handleVideoLoadedMetadata}
-                    onTimeUpdate={handleVideoTimeUpdate}
-                    style={{
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-                    }}
+            {/* Cropper Area */}
+            <div style={{ flex: 1, position: 'relative', background: '#000' }}>
+                <Cropper
+                    image={URL.createObjectURL(file)}
+                    crop={crop}
+                    zoom={zoom}
+                    rotation={rotation}
+                    aspect={aspect}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
                 />
             </div>
 
-            {/* Trimmer Controls */}
+            {/* Controls */}
             <div style={{
                 padding: '1.5rem',
-                background: 'rgba(20, 20, 20, 0.95)',
-                borderTop: '1px solid rgba(255,255,255,0.1)'
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(20, 20, 20, 0.95)'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    <span>Start: {formatTime(videoTime.start)}</span>
-                    <span>End: {formatTime(videoTime.end)}</span>
+                {/* Zoom Slider */}
+                <div style={{ marginBottom: '1rem' }}>
+                    <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        fontSize: '0.9rem',
+                        color: '#94a3b8'
+                    }}>
+                        <span style={{ minWidth: '60px' }}>Zoom</span>
+                        <input
+                            type="range"
+                            value={zoom}
+                            min={1}
+                            max={3}
+                            step={0.1}
+                            onChange={(e) => setZoom(e.target.value)}
+                            style={{ flex: 1 }}
+                        />
+                        <span style={{ minWidth: '40px', textAlign: 'right' }}>
+                            {Math.round(zoom * 100)}%
+                        </span>
+                    </label>
                 </div>
 
-                {/* Simple Range Slider Simulation */}
-                <div style={{ position: 'relative', height: '40px', display: 'flex', alignItems: 'center' }}>
-                    <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={videoRange.start}
-                        onChange={(e) => {
-                            const val = Math.min(Number(e.target.value), videoRange.end - 5);
-                            setVideoRange(prev => ({ ...prev, start: val }));
-                            setVideoTime(prev => ({ ...prev, start: (val / 100) * videoDuration }));
-                        }}
+                {/* Rotation Slider */}
+                <div style={{ marginBottom: '1rem' }}>
+                    <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        fontSize: '0.9rem',
+                        color: '#94a3b8'
+                    }}>
+                        <span style={{ minWidth: '60px' }}>Rotate</span>
+                        <input
+                            type="range"
+                            value={rotation}
+                            min={0}
+                            max={360}
+                            step={1}
+                            onChange={(e) => setRotation(e.target.value)}
+                            style={{ flex: 1 }}
+                        />
+                        <span style={{ minWidth: '40px', textAlign: 'right' }}>
+                            {rotation}°
+                        </span>
+                    </label>
+                </div>
+
+                {/* Aspect Ratio Controls */}
+                <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    justifyContent: 'center',
+                    marginBottom: '1rem',
+                    flexWrap: 'wrap'
+                }}>
+                    {[
+                        { label: 'Free', value: null },
+                        { label: '1:1', value: 1 / 1 },
+                        { label: '4:5', value: 4 / 5 },
+                        { label: '16:9', value: 16 / 9 }
+                    ].map((ratio) => (
+                        <button
+                            key={ratio.label}
+                            onClick={() => setAspect(ratio.value)}
+                            className="btn"
+                            style={{
+                                background: aspect === ratio.value ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                                padding: '0.4rem 0.8rem',
+                                fontSize: '0.8rem',
+                                border: 'none',
+                                color: 'white',
+                                borderRadius: '4px'
+                            }}
+                        >
+                            {ratio.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Quick Actions */}
+                <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    justifyContent: 'center',
+                    flexWrap: 'wrap'
+                }}>
+                    <button
+                        onClick={handleRotate}
+                        className="btn"
                         style={{
-                            position: 'absolute',
-                            width: '100%',
-                            zIndex: 2,
-                            pointerEvents: 'none', // Allow clicking through? No, this is tricky in pure CSS/JS without a lib.
-                            // We'll just do two full width sliders on top of each other
-                            opacity: 0.5
+                            background: 'rgba(255,255,255,0.1)',
+                            padding: '0.5rem 1rem',
+                            fontSize: '0.9rem'
                         }}
-                    />
-                    {/* 
-                            Actually, dual range sliders are hard with default inputs. 
-                            Let's use two distinct inputs: "Trim Start" and "Trim End" for MVP reliability.
-                         */}
+                    >
+                        🔄 Rotate 90°
+                    </button>
+                    <button
+                        onClick={() => {
+                            setZoom(1);
+                            setRotation(0);
+                            setAspect(null);
+                        }}
+                        className="btn"
+                        style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            padding: '0.5rem 1rem',
+                            fontSize: '0.9rem'
+                        }}
+                    >
+                        ⟲ Reset All
+                    </button>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                        <label style={{ color: 'white', display: 'block', marginBottom: '0.5rem' }}>Start Time</label>
-                        <input
-                            type="range"
-                            min="0"
-                            max={videoDuration}
-                            step="0.1"
-                            value={videoTime.start}
-                            onChange={(e) => {
-                                const val = Number(e.target.value);
-                                if (val < videoTime.end) setVideoTime({ ...videoTime, start: val });
-                            }}
-                            style={{ width: '100%' }}
-                        />
-                    </div>
-                    <div>
-                        <label style={{ color: 'white', display: 'block', marginBottom: '0.5rem' }}>End Time</label>
-                        <input
-                            type="range"
-                            min="0"
-                            max={videoDuration}
-                            step="0.1"
-                            value={videoTime.end}
-                            onChange={(e) => {
-                                const val = Number(e.target.value);
-                                if (val > videoTime.start) setVideoTime({ ...videoTime, end: val });
-                            }}
-                            style={{ width: '100%' }}
-                        />
-                    </div>
-                </div>
-
-                <small style={{ display: 'block', textAlign: 'center', marginTop: '1rem', color: '#64748b' }}>
-                    Drag sliders to trim the video
-                </small>
             </div>
         </div>
     );
-}
-
-return (
-    <div style={containerStyle}>
-        {/* Header */}
-        <div style={{
-            padding: '1rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(0,0,0,0.8)' // Consistent styling
-        }}>
-            <button
-                onClick={onCancel}
-                className="btn"
-                style={{ background: 'transparent', padding: '0.5rem 1rem', color: 'white' }}
-                disabled={processing}
-            >
-                Cancel
-            </button>
-            <h3 style={{ margin: 0, color: 'white' }}>Edit Photo</h3>
-            <button
-                onClick={handleSave}
-                className="btn"
-                style={{ background: '#a855f7', padding: '0.5rem 1.5rem', color: 'white', border: 'none', borderRadius: '4px' }}
-                disabled={processing}
-            >
-                {processing ? 'Saving...' : 'Done'}
-            </button>
-        </div>
-
-        {/* Cropper Area */}
-        <div style={{ flex: 1, position: 'relative', background: '#000' }}>
-            <Cropper
-                image={URL.createObjectURL(file)}
-                crop={crop}
-                zoom={zoom}
-                rotation={rotation}
-                aspect={aspect}
-                onCropChange={setCrop}
-                onCropComplete={onCropComplete}
-                onZoomChange={setZoom}
-            />
-        </div>
-
-        {/* Controls */}
-        <div style={{
-            padding: '1.5rem',
-            borderTop: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(20, 20, 20, 0.95)'
-        }}>
-            {/* Zoom Slider */}
-            <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    fontSize: '0.9rem',
-                    color: '#94a3b8'
-                }}>
-                    <span style={{ minWidth: '60px' }}>Zoom</span>
-                    <input
-                        type="range"
-                        value={zoom}
-                        min={1}
-                        max={3}
-                        step={0.1}
-                        onChange={(e) => setZoom(e.target.value)}
-                        style={{ flex: 1 }}
-                    />
-                    <span style={{ minWidth: '40px', textAlign: 'right' }}>
-                        {Math.round(zoom * 100)}%
-                    </span>
-                </label>
-            </div>
-
-            {/* Rotation Slider */}
-            <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    fontSize: '0.9rem',
-                    color: '#94a3b8'
-                }}>
-                    <span style={{ minWidth: '60px' }}>Rotate</span>
-                    <input
-                        type="range"
-                        value={rotation}
-                        min={0}
-                        max={360}
-                        step={1}
-                        onChange={(e) => setRotation(e.target.value)}
-                        style={{ flex: 1 }}
-                    />
-                    <span style={{ minWidth: '40px', textAlign: 'right' }}>
-                        {rotation}°
-                    </span>
-                </label>
-            </div>
-
-            {/* Aspect Ratio Controls */}
-            <div style={{
-                display: 'flex',
-                gap: '0.5rem',
-                justifyContent: 'center',
-                marginBottom: '1rem',
-                flexWrap: 'wrap'
-            }}>
-                {[
-                    { label: 'Free', value: null },
-                    { label: '1:1', value: 1 / 1 },
-                    { label: '4:5', value: 4 / 5 },
-                    { label: '16:9', value: 16 / 9 }
-                ].map((ratio) => (
-                    <button
-                        key={ratio.label}
-                        onClick={() => setAspect(ratio.value)}
-                        className="btn"
-                        style={{
-                            background: aspect === ratio.value ? '#a855f7' : 'rgba(255,255,255,0.1)',
-                            padding: '0.4rem 0.8rem',
-                            fontSize: '0.8rem',
-                            border: 'none',
-                            color: 'white',
-                            borderRadius: '4px'
-                        }}
-                    >
-                        {ratio.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* Quick Actions */}
-            <div style={{
-                display: 'flex',
-                gap: '0.5rem',
-                justifyContent: 'center',
-                flexWrap: 'wrap'
-            }}>
-                <button
-                    onClick={handleRotate}
-                    className="btn"
-                    style={{
-                        background: 'rgba(255,255,255,0.1)',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.9rem'
-                    }}
-                >
-                    🔄 Rotate 90°
-                </button>
-                <button
-                    onClick={() => {
-                        setZoom(1);
-                        setRotation(0);
-                        setAspect(null);
-                    }}
-                    className="btn"
-                    style={{
-                        background: 'rgba(255,255,255,0.1)',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.9rem'
-                    }}
-                >
-                    ⟲ Reset All
-                </button>
-            </div>
-        </div>
-    </div>
-);
 };
 
 export default MediaPreview;
