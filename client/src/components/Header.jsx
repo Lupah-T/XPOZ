@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 
 const Header = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [showAnnouncements, setShowAnnouncements] = React.useState(false);
     const [AnnouncementModal, setAnnouncementModal] = React.useState(null);
     const [hasNewAnnouncements, setHasNewAnnouncements] = React.useState(false);
@@ -122,6 +122,16 @@ const Header = () => {
                                 {user?.avatarUrl && <img src={`${API_URL}/${user.avatarUrl}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                             </div>
                         </Link>
+                        {user && (
+                            <button
+                                onClick={logout}
+                                className="nav-icon"
+                                title="Logout"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: '#ef4444' }}
+                            >
+                                🚪
+                            </button>
+                        )}
                     </div>
 
                     {/* Mobile - Just show create button */}
