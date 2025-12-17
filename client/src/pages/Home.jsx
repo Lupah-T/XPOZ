@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
+import VideoPlayer from '../components/VideoPlayer';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 
@@ -178,21 +179,66 @@ const Home = () => {
                                 </div>
 
                                 {/* Media */}
-                                <div style={{ width: '100%', background: '#000', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {report.evidenceType === 'image' && (
-                                        <img src={`${API_URL}/${report.evidenceUrl}`} alt="Evidence" style={{ width: '100%', height: 'auto', maxHeight: '600px', objectFit: 'contain' }} />
-                                    )}
-                                    {report.evidenceType === 'video' && (
-                                        <video controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '100%', maxHeight: '600px' }} />
-                                    )}
-                                    {report.evidenceType === 'audio' && (
-                                        <audio controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '90%' }} />
-                                    )}
-                                    {(report.evidenceType === 'none' || !report.evidenceType) && (
-                                        <div style={{ padding: '2rem', textAlign: 'center' }}>
-                                            <h3>{report.title}</h3>
-                                            <p>{report.description.substring(0, 100)}...</p>
+                                <div style={{ width: '100%', background: '#000', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                    {report.postType === 'text' ? (
+                                        <div style={{
+                                            width: '100%',
+                                            minHeight: '300px',
+                                            background: report.textStyle?.backgroundColor || '#667eea',
+                                            color: report.textStyle?.textColor || '#fff',
+                                            fontFamily: report.textStyle?.fontFamily || 'Inter',
+                                            fontSize: report.textStyle?.fontSize || '24px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            padding: '2rem',
+                                            textAlign: 'center',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {report.description}
                                         </div>
+                                    ) : report.postType === 'media' && report.media && report.media.length > 0 ? (
+                                        // Carousel for multiple media
+                                        <div style={{ width: '100%', overflowX: 'auto', display: 'flex', scrollSnapType: 'x mandatory' }}>
+                                            {report.media.map((item, idx) => (
+                                                <div key={idx} style={{ minWidth: '100%', scrollSnapAlign: 'center', position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                                                    {item.type === 'video' ? (
+                                                        <VideoPlayer
+                                                            src={`${API_URL}/${item.url}`}
+                                                            poster={item.thumbnail ? `${API_URL}/${item.thumbnail}` : undefined}
+                                                            startTime={item.metadata?.startTime}
+                                                            endTime={item.metadata?.endTime}
+                                                        />
+                                                    ) : (
+                                                        <img src={`${API_URL}/${item.url}`} alt="Post content" style={{ width: '100%', height: 'auto', maxHeight: '600px', objectFit: 'contain' }} />
+                                                    )}
+                                                    {report.media.length > 1 && (
+                                                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '12px', fontSize: '0.8rem' }}>
+                                                            {idx + 1}/{report.media.length}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        // Legacy Support
+                                        <>
+                                            {report.evidenceType === 'image' && (
+                                                <img src={`${API_URL}/${report.evidenceUrl}`} alt="Evidence" style={{ width: '100%', height: 'auto', maxHeight: '600px', objectFit: 'contain' }} />
+                                            )}
+                                            {report.evidenceType === 'video' && (
+                                                <video controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '100%', maxHeight: '600px' }} />
+                                            )}
+                                            {report.evidenceType === 'audio' && (
+                                                <audio controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '90%' }} />
+                                            )}
+                                            {(report.evidenceType === 'none' || (!report.evidenceType && !report.media)) && (
+                                                <div style={{ padding: '2rem', textAlign: 'center', color: '#fff' }}>
+                                                    <h3 style={{ marginTop: 0 }}>{report.title}</h3>
+                                                    <p>{report.description}</p>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 
