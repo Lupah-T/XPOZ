@@ -139,14 +139,10 @@ router.delete('/:id/unfollow', auth, async (req, res) => {
 });
 
 const multer = require('multer');
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/')
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname)
-    }
-});
+const { uploadToFirebase } = require('../utils/cloudStorage');
+
+// Use Memory Storage for Firebase upload
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Upload Avatar
@@ -161,10 +157,15 @@ router.post('/:id/avatar', [auth, upload.single('avatar')], async (req, res) => 
 
     try {
         const user = await User.findById(req.user.id);
-        user.avatarUrl = req.file.path;
+
+        // Upload to Firebase
+        const imageUrl = await uploadToFirebase(req.file.buffer, 'avatars/', req.file.mimetype);
+
+        user.avatarUrl = imageUrl;
         await user.save();
         res.json({ avatarUrl: user.avatarUrl });
     } catch (err) {
+        console.error('Avatar upload error:', err);
         res.status(500).json({ message: err.message });
     }
 });
