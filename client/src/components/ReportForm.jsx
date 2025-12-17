@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
+import MediaPreview from './MediaPreview';
 
 const ReportForm = () => {
     const { token, user } = useAuth();
+    const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
         title: '',
-        category: 'Infrastructure',
-        location: '',
         description: ''
     });
-    const [evidence, setEvidence] = useState(null);
-    const [status, setStatus] = useState(null); // idle, loading, success, error
+    const [mediaFiles, setMediaFiles] = useState([]);
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [status, setStatus] = useState(null);
     const [message, setMessage] = useState('');
+    const [uploading, setUpload] = useState(false);
 
     const handleChange = (e) => {
         setFormData({
@@ -21,24 +25,78 @@ const ReportForm = () => {
         });
     };
 
-    const handleFileChange = (e) => {
-        if (e.target.files[0]) {
-            setEvidence(e.target.files[0]);
+    const handleFileSelect = (e) => {
+        const files = Array.from(e.target.files);
+
+        // Validate total count
+        if (mediaFiles.length + files.length > 6) {
+            alert('Maximum 6 media files allowed per post');
+            return;
         }
+
+        // Add new files with preview URLs
+        const newFiles = files.map((file, index) => ({
+            file,
+            preview: URL.createObjectURL(file),
+            type: file.type.startsWith('image/') ? 'image' : 'video',
+            order: mediaFiles.length + index,
+            edited: false
+        }));
+
+        setMediaFiles([...mediaFiles, ...newFiles]);
+        e.target.value = ''; // Reset input
+    };
+
+    const handleRemoveMedia = (index) => {
+        const newFiles = mediaFiles.filter((_, i) => i !== index);
+        // Reorder remaining files
+        newFiles.forEach((file, i) => file.order = i);
+        setMediaFiles(newFiles);
+    };
+
+    const handleEditMedia = (index) => {
+        setEditingIndex(index);
+    };
+
+    const handleSaveEditedMedia = (editedFile) => {
+        const newFiles = [...mediaFiles];
+        newFiles[editingIndex] = {
+            ...newFiles[editingIndex],
+            file: editedFile,
+            preview: URL.createObjectURL(editedFile),
+            edited: true
+        };
+        setMediaFiles(newFiles);
+        setEditingIndex(null);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setUpload(true);
         setStatus('loading');
         setMessage('');
 
+        // Validate
+        if (mediaFiles.length === 1) {
+            alert('Please add at least 2 media files, or remove all media for text-only post');
+            setUpload(false);
+            setStatus(null);
+            return;
+        }
+
         const data = new FormData();
         data.append('title', formData.title);
-        data.append('category', formData.category);
-        data.append('location', formData.location);
         data.append('description', formData.description);
-        if (evidence) {
-            data.append('evidence', evidence);
+
+        // Determine post type
+        if (mediaFiles.length >= 2) {
+            data.append('postType', 'media');
+            // Append all media files
+            mediaFiles.forEach((item) => {
+                data.append('media', item.file);
+            });
+        } else {
+            data.append('postType', 'legacy');
         }
 
         try {
@@ -47,131 +105,288 @@ const ReportForm = () => {
                 headers: {
                     'x-auth-token': token
                 },
-                // Content-Type header is automatically set by browser for FormData
                 body: data
             });
 
             if (!response.ok) {
-                throw new Error('Failed to submit report');
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to create post');
             }
 
             setStatus('success');
-            setMessage('Report submitted successfully! Your voice has been heard.');
-            setFormData({
-                title: '',
-                category: 'Infrastructure',
-                location: '',
-                description: ''
-            });
-            setEvidence(null);
-            // Reset file input manually if needed, or rely on form reset
-            e.target.reset();
+            setMessage('Post created successfully!');
+
+            // Reset form
+            setFormData({ title: '', description: '' });
+            setMediaFiles([]);
+
+            // Redirect to home after 1.5s
+            setTimeout(() => {
+                navigate('/');
+            }, 1500);
+
         } catch (err) {
+            console.error('Submit error:', err);
             setStatus('error');
-            setMessage('Error submitting report: ' + err.message);
+            setMessage('Error creating post: ' + err.message);
+        } finally {
+            setUpload(false);
         }
     };
 
     return (
-        <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2>Post an Exposure</h2>
-                {user && <span style={{ color: 'var(--primary-color)', fontSize: '0.9rem' }}>Posting as <strong>{user.pseudoName}</strong></span>}
-            </div>
-            <p style={{ marginBottom: '2rem' }}>
-                Share views, ideas, or expose bad actors.
-            </p>
-
-            {status === 'success' && (
-                <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid currentColor' }}>
-                    {message}
-                </div>
-            )}
-
-            {status === 'error' && (
-                <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid currentColor' }}>
-                    {message}
-                </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-                <div className="input-group">
-                    <label className="label" htmlFor="title">Title</label>
-                    <input
-                        type="text"
-                        id="title"
-                        name="title"
-                        className="input"
-                        placeholder="e.g., Pothole on Main St"
-                        value={formData.title}
-                        onChange={handleChange}
-                        required
-                    />
+        <>
+            <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h2 style={{ margin: 0 }}>Create Post</h2>
+                    {user && <span style={{ color: 'var(--primary-color)', fontSize: '0.9rem' }}>
+                        Posting as <strong>{user.pseudoName}</strong>
+                    </span>}
                 </div>
 
-                <div className="input-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                        <label className="label" htmlFor="category">Category</label>
-                        <select
-                            id="category"
-                            name="category"
-                            className="select"
-                            value={formData.category}
-                            onChange={handleChange}
-                        >
-                            <option value="Infrastructure">Infrastructure</option>
-                            <option value="Utility">Utility</option>
-                            <option value="Safety">Safety</option>
-                            <option value="Other">Other</option>
-                        </select>
+                {status === 'success' && (
+                    <div style={{
+                        padding: '1rem',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        color: '#10b981',
+                        borderRadius: '8px',
+                        marginBottom: '1.5rem',
+                        border: '1px solid currentColor'
+                    }}>
+                        {message}
                     </div>
-                    <div>
-                        <label className="label" htmlFor="location">Location</label>
+                )}
+
+                {status === 'error' && (
+                    <div style={{
+                        padding: '1rem',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        borderRadius: '8px',
+                        marginBottom: '1.5rem',
+                        border: '1px solid currentColor'
+                    }}>
+                        {message}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    {/* Title */}
+                    <div className="input-group">
+                        <label className="label" htmlFor="title">Title</label>
                         <input
                             type="text"
-                            id="location"
-                            name="location"
+                            id="title"
+                            name="title"
                             className="input"
-                            placeholder="e.g., 123 4th Ave"
-                            value={formData.location}
+                            placeholder="What's on your mind?"
+                            value={formData.title}
                             onChange={handleChange}
                             required
+                            style={{ fontSize: '16px' }}
                         />
                     </div>
-                </div>
 
-                <div className="input-group">
-                    <label className="label" htmlFor="description">Description</label>
-                    <textarea
-                        id="description"
-                        name="description"
-                        className="textarea"
-                        placeholder="Describe the issue in detail..."
-                        value={formData.description}
-                        onChange={handleChange}
-                        required
-                    ></textarea>
-                </div>
+                    {/* Description */}
+                    <div className="input-group">
+                        <label className="label" htmlFor="description">Description</label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            className="textarea"
+                            placeholder="Share your thoughts..."
+                            value={formData.description}
+                            onChange={handleChange}
+                            required
+                            rows={4}
+                            style={{ fontSize: '16px' }}
+                        />
+                    </div>
 
-                <div className="input-group">
-                    <label className="label" htmlFor="evidence">Attach Evidence (Optional)</label>
-                    <input
-                        type="file"
-                        id="evidence"
-                        name="evidence"
-                        className="input"
-                        accept="image/*,video/*,audio/*"
-                        onChange={handleFileChange}
-                        style={{ padding: '0.5rem' }}
-                    />
-                    <small style={{ color: 'var(--text-secondary)' }}>Supported: Images, Video, Audio</small>
-                </div>
+                    {/* Media Upload */}
+                    <div className="input-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label className="label" style={{ margin: 0 }}>
+                                Media ({mediaFiles.length}/6)
+                            </label>
+                            {mediaFiles.length < 6 && (
+                                <label
+                                    htmlFor="media-input"
+                                    className="btn"
+                                    style={{
+                                        background: '#a855f7',
+                                        padding: '0.4rem 1rem',
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    + Add Media
+                                </label>
+                            )}
+                        </div>
 
-                <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={status === 'loading'}>
-                    {status === 'loading' ? 'Submitting...' : 'Submit Report'}
-                </button>
-            </form>
-        </div>
+                        <input
+                            type="file"
+                            id="media-input"
+                            accept="image/*,video/*"
+                            multiple
+                            onChange={handleFileSelect}
+                            style={{ display: 'none' }}
+                        />
+
+                        {/* Media Grid */}
+                        {mediaFiles.length > 0 && (
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                                gap: '0.75rem',
+                                marginTop: '1rem'
+                            }}>
+                                {mediaFiles.map((item, index) => (
+                                    <div
+                                        key={index}
+                                        style={{
+                                            position: 'relative',
+                                            aspectRatio: '1/1',
+                                            borderRadius: '8px',
+                                            overflow: 'hidden',
+                                            background: '#1e293b',
+                                            border: '2px solid rgba(168, 85, 247, 0.3)'
+                                        }}
+                                    >
+                                        {/* Preview */}
+                                        {item.type === 'image' ? (
+                                            <img
+                                                src={item.preview}
+                                                alt={`Media ${index + 1}`}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover'
+                                                }}
+                                            />
+                                        ) : (
+                                            <video
+                                                src={item.preview}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover'
+                                                }}
+                                            />
+                                        )}
+
+                                        {/* Order Badge */}
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '0.5rem',
+                                            left: '0.5rem',
+                                            background: 'rgba(0,0,0,0.7)',
+                                            color: 'white',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: '4px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600'
+                                        }}>
+                                            {index + 1}
+                                        </div>
+
+                                        {/* Edited Badge */}
+                                        {item.edited && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '0.5rem',
+                                                right: '0.5rem',
+                                                background: '#10b981',
+                                                color: 'white',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '4px',
+                                                fontSize: '0.7rem'
+                                            }}>
+                                                ✓ Edited
+                                            </div>
+                                        )}
+
+                                        {/* Actions */}
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                                            padding: '2rem 0.5rem 0.5rem',
+                                            display: 'flex',
+                                            gap: '0.5rem',
+                                            justifyContent: 'center'
+                                        }}>
+                                            {item.type === 'image' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleEditMedia(index)}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.2)',
+                                                        border: 'none',
+                                                        padding: '0.4rem 0.75rem',
+                                                        borderRadius: '4px',
+                                                        color: 'white',
+                                                        fontSize: '0.75rem',
+                                                        cursor: 'pointer',
+                                                        backdropFilter: 'blur(4px)'
+                                                    }}
+                                                >
+                                                    ✏️ Edit
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveMedia(index)}
+                                                style={{
+                                                    background: 'rgba(239, 68, 68, 0.8)',
+                                                    border: 'none',
+                                                    padding: '0.4rem 0.75rem',
+                                                    borderRadius: '4px',
+                                                    color: 'white',
+                                                    fontSize: '0.75rem',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                🗑️ Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '0.5rem' }}>
+                            {mediaFiles.length === 0 ? 'Add 2-6 images or videos (optional)' :
+                                mediaFiles.length === 1 ? '⚠️ Add at least one more file or remove media' :
+                                    `${mediaFiles.length} files selected`}
+                        </small>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginTop: '1rem' }}
+                        disabled={uploading}
+                    >
+                        {uploading ? 'Posting...' : 'Create Post'}
+                    </button>
+                </form>
+            </div>
+
+            {/* Media Preview Modal */}
+            {editingIndex !== null && (
+                <MediaPreview
+                    file={mediaFiles[editingIndex].file}
+                    type={mediaFiles[editingIndex].type}
+                    onSave={handleSaveEditedMedia}
+                    onCancel={() => setEditingIndex(null)}
+                />
+            )}
+        </>
     );
 };
 
