@@ -9,14 +9,14 @@ const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
 
 // Multer Config
-const { uploadToFirebase } = require('../utils/cloudStorage');
-const fs = require('fs');
-const util = require('util');
-const writeFile = util.promisify(fs.writeFile);
-const unlink = util.promisify(fs.unlink);
-
-// Multer Memory Storage
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
 
 const upload = multer({
     storage: storage,
@@ -78,25 +78,16 @@ router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
 
             // Process each file
             mediaFiles = await Promise.all(req.files.map(async (file, index) => {
-                let fileUrl = '';
-                let thumbnailUrl = null;
+                let thumbnailPath = null;
                 const isVideo = file.mimetype.startsWith('video/');
 
                 if (isVideo) {
-                    // Video requires temp file for ffmpeg
-                    const tempVideoName = `temp_${Date.now()}_${index}.mp4`;
-                    const tempVideoPath = path.join('uploads', tempVideoName); // Ensure 'uploads' dir exists locally for temp use
-
                     try {
-                        // 1. Write buffer to temp file
-                        await writeFile(tempVideoPath, file.buffer);
-
-                        // 2. Generate Thumbnail
-                        const thumbFilename = `thumb_${path.parse(tempVideoName).name}.jpg`;
+                        const thumbFilename = `thumb_${path.parse(file.filename).name}.jpg`;
                         const thumbPath = path.join('uploads', thumbFilename);
 
                         await new Promise((resolve, reject) => {
-                            ffmpeg(tempVideoPath)
+                            ffmpeg(file.path)
                                 .screenshots({
                                     count: 1,
                                     folder: 'uploads',
@@ -106,26 +97,11 @@ router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
                                 .on('end', resolve)
                                 .on('error', reject);
                         });
-
-                        // 3. Upload Video to Firebase
-                        fileUrl = await uploadToFirebase(file.buffer, 'posts/', file.mimetype);
-
-                        // 4. Upload Thumbnail to Firebase
-                        const thumbBuffer = fs.readFileSync(thumbPath);
-                        thumbnailUrl = await uploadToFirebase(thumbBuffer, 'thumbnails/', 'image/jpeg');
-
-                        // 5. Cleanup Temp Files
-                        await unlink(tempVideoPath);
-                        await unlink(thumbPath);
-
+                        thumbnailPath = thumbPath;
                     } catch (err) {
-                        console.error('Video processing failed:', err);
-                        // Cleanup on error
-                        if (fs.existsSync(tempVideoPath)) await unlink(tempVideoPath);
+                        console.error('Thumbnail generation failed:', err);
+                        // Continue without thumbnail
                     }
-                } else {
-                    // Image: Direct upload
-                    fileUrl = await uploadToFirebase(file.buffer, 'posts/', file.mimetype);
                 }
 
                 let metadata = null;
@@ -140,8 +116,8 @@ router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
 
                 return {
                     type: isVideo ? 'video' : 'image',
-                    url: fileUrl,
-                    thumbnail: thumbnailUrl,
+                    url: file.path,
+                    thumbnail: thumbnailPath,
                     order: index,
                     metadata // { startTime, endTime }
                 };
@@ -163,11 +139,12 @@ router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
             reportData.textStyle = JSON.parse(textStyle);
         } else if ((postType === 'media' || postType === 'mixed') && mediaFiles.length > 0) {
             reportData.media = mediaFiles;
-            reportData.evidenceUrl = mediaFiles[0].url; // Backwards compatibility
+            reportData.evidenceUrl = mediaFiles[0].url;
             reportData.evidenceType = mediaFiles[0].type;
-        } else if (req.file) { // Shouldn't happen now with array upload but safe to keep
-            // ... legacy single file logic not supported nicely with memory storage easily without adaptation, 
-            // but our front end sends 'media' array now.
+        } else if (req.file) {
+            // Fallback for old single upload
+            reportData.evidenceUrl = req.file.path;
+            reportData.evidenceType = req.file.mimetype.startsWith('image/') ? 'image' : 'video';
         }
 
         const report = new Report(reportData);
