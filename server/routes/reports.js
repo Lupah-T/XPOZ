@@ -8,18 +8,11 @@ const path = require('path');
 
 const ffmpeg = require('fluent-ffmpeg');
 
-// Multer Config
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
+// Cloudinary Storage Config
+const { postStorage, cloudinary } = require('../config/cloudinary');
 
 const upload = multer({
-    storage: storage,
+    storage: postStorage,
     limits: {
         fileSize: 50 * 1024 * 1024 // 50MB limit
     },
@@ -76,32 +69,18 @@ router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
                 return res.status(400).json({ message: 'Maximum 6 files allowed per post' });
             }
 
-            // Process each file
+            // Process each file - Cloudinary provides URL in file.path
             mediaFiles = await Promise.all(req.files.map(async (file, index) => {
-                let thumbnailPath = null;
                 const isVideo = file.mimetype.startsWith('video/');
 
-                if (isVideo) {
-                    try {
-                        const thumbFilename = `thumb_${path.parse(file.filename).name}.jpg`;
-                        const thumbPath = path.join('uploads', thumbFilename);
+                // For Cloudinary, file.path contains the full URL
+                const fileUrl = file.path;
 
-                        await new Promise((resolve, reject) => {
-                            ffmpeg(file.path)
-                                .screenshots({
-                                    count: 1,
-                                    folder: 'uploads',
-                                    filename: thumbFilename,
-                                    size: '320x240'
-                                })
-                                .on('end', resolve)
-                                .on('error', reject);
-                        });
-                        thumbnailPath = thumbPath;
-                    } catch (err) {
-                        console.error('Thumbnail generation failed:', err);
-                        // Continue without thumbnail
-                    }
+                // For videos, Cloudinary can auto-generate thumbnails by changing the extension
+                // e.g., https://res.cloudinary.com/.../video.mp4 -> .../video.jpg
+                let thumbnailUrl = null;
+                if (isVideo && fileUrl) {
+                    thumbnailUrl = fileUrl.replace(/\.(mp4|mov|avi|webm)$/i, '.jpg');
                 }
 
                 let metadata = null;
@@ -116,8 +95,8 @@ router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
 
                 return {
                     type: isVideo ? 'video' : 'image',
-                    url: file.path,
-                    thumbnail: thumbnailPath,
+                    url: fileUrl,
+                    thumbnail: thumbnailUrl,
                     order: index,
                     metadata // { startTime, endTime }
                 };

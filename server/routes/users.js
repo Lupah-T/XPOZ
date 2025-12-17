@@ -139,16 +139,9 @@ router.delete('/:id/unfollow', auth, async (req, res) => {
 });
 
 const multer = require('multer');
+const { avatarStorage } = require('../config/cloudinary');
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/')
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname)
-    }
-});
-const upload = multer({ storage: storage });
+const upload = multer({ storage: avatarStorage });
 
 // Upload Avatar
 router.post('/:id/avatar', [auth, upload.single('avatar')], async (req, res) => {
@@ -162,10 +155,12 @@ router.post('/:id/avatar', [auth, upload.single('avatar')], async (req, res) => 
 
     try {
         const user = await User.findById(req.user.id);
+        // Cloudinary provides the URL in file.path
         user.avatarUrl = req.file.path;
         await user.save();
         res.json({ avatarUrl: user.avatarUrl });
     } catch (err) {
+        console.error('Avatar upload error:', err);
         res.status(500).json({ message: err.message });
     }
 });
