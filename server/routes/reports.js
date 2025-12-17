@@ -5,6 +5,9 @@ const User = require('../models/User');
 const multer = require('multer');
 const path = require('path');
 
+
+const ffmpeg = require('fluent-ffmpeg');
+
 // Multer Config
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -14,7 +17,20 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + path.extname(file.originalname));
     }
 });
-const upload = multer({ storage: storage });
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 50 * 1024 * 1024 // 50MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only images and videos are allowed.'), false);
+        }
+    }
+});
 
 const auth = require('../middleware/auth');
 
@@ -48,22 +64,44 @@ router.post('/', [auth, upload.array('media', 6)], async (req, res) => {
 
         // Handle multiple media files
         if (req.files && req.files.length > 0) {
-            // Validate file count for media posts
-            if (postType === 'media' && req.files.length === 1) {
-                return res.status(400).json({
-                    message: 'Media posts require at least 2 files (or use legacy single-file mode)'
-                });
-            }
-
             if (req.files.length > 6) {
                 return res.status(400).json({ message: 'Maximum 6 files allowed per post' });
             }
 
             // Process each file
-            mediaFiles = req.files.map((file, index) => ({
-                type: file.mimetype.startsWith('image/') ? 'image' : 'video',
-                url: file.path,
-                order: index
+            mediaFiles = await Promise.all(req.files.map(async (file, index) => {
+                let thumbnailPath = null;
+                const isVideo = file.mimetype.startsWith('video/');
+
+                if (isVideo) {
+                    try {
+                        const thumbFilename = `thumb_${path.parse(file.filename).name}.jpg`;
+                        const thumbPath = path.join('uploads', thumbFilename);
+
+                        await new Promise((resolve, reject) => {
+                            ffmpeg(file.path)
+                                .screenshots({
+                                    count: 1,
+                                    folder: 'uploads',
+                                    filename: thumbFilename,
+                                    size: '320x240'
+                                })
+                                .on('end', resolve)
+                                .on('error', reject);
+                        });
+                        thumbnailPath = thumbPath; // Store relative path like 'uploads/thumb_...'
+                    } catch (err) {
+                        console.error('Thumbnail generation failed:', err);
+                        // Continue without thumbnail
+                    }
+                }
+
+                return {
+                    type: isVideo ? 'video' : 'image',
+                    url: file.path,
+                    thumbnail: thumbnailPath,
+                    order: index
+                };
             }));
         }
 

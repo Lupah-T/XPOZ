@@ -86,8 +86,8 @@ const ReportForm = () => {
         setMessage('');
 
         // Validate based on mode
-        if (postMode === 'media' && mediaFiles.length === 1) {
-            alert('Please add at least 2 media files, or switch to text mode');
+        if (postMode === 'media' && mediaFiles.length === 0) {
+            alert('Please add at least 1 media file, or switch to text mode');
             setUpload(false);
             setStatus(null);
             return;
@@ -101,7 +101,7 @@ const ReportForm = () => {
         if (postMode === 'text' && textPostData) {
             data.append('postType', 'text');
             data.append('textStyle', JSON.stringify(textPostData.style));
-        } else if (mediaFiles.length >= 2) {
+        } else if (mediaFiles.length >= 1) {
             data.append('postType', 'media');
             // Append all media files
             mediaFiles.forEach((item) => {
@@ -417,9 +417,8 @@ const ReportForm = () => {
                             )}
 
                             <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '0.5rem' }}>
-                                {mediaFiles.length === 0 ? 'Add 2-6 images or videos (optional)' :
-                                    mediaFiles.length === 1 ? '⚠️ Add at least one more file or remove media' :
-                                        `${mediaFiles.length} files selected`}
+                                mediaFiles.length === 0 ? 'Add 1-6 images or videos' :
+                                `${mediaFiles.length} files selected`}
                             </small>
                         </div>
 
