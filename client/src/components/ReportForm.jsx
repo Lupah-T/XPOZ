@@ -431,6 +431,7 @@ const ReportForm = () => {
                                     `${mediaFiles.length} files selected`}
                             </small>
                         </div>
+                    )}
 
                     {/* Submit Button */}
                     <button
