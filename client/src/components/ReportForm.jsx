@@ -427,8 +427,8 @@ const ReportForm = () => {
                             )}
 
                             <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '0.5rem' }}>
-                                mediaFiles.length === 0 ? 'Add 1-6 images or videos' :
-                                `${mediaFiles.length} files selected`}
+                                {mediaFiles.length === 0 ? 'Add 1-6 images or videos' :
+                                    `${mediaFiles.length} files selected`}
                             </small>
                         </div>
 
