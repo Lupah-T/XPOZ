@@ -17,7 +17,7 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
     const handleSave = async () => {
         try {
             setProcessing(true);
-            if (!croppedAreaPixels) {
+            if (!croppedAreaPixels || croppedAreaPixels.width === 0 || croppedAreaPixels.height === 0) {
                 // If user clicks save too fast or there's an issue
                 alert('Please adjust the crop area slightly before saving.');
                 setProcessing(false);

@@ -45,6 +45,11 @@ export default async function getCroppedImg(
         return null;
     }
 
+    if (!pixelCrop || pixelCrop.width === 0 || pixelCrop.height === 0) {
+        console.warn('Invalid crop dimensions', pixelCrop);
+        return null;
+    }
+
     const rotRad = getRadianAngle(rotation);
 
     // calculate bounding box of the rotated image
