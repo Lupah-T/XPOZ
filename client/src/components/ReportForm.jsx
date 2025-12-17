@@ -62,13 +62,14 @@ const ReportForm = () => {
         setEditingIndex(index);
     };
 
-    const handleSaveEditedMedia = (editedFile) => {
+    const handleSaveEditedMedia = (editedFile, metadata = null) => {
         const newFiles = [...mediaFiles];
         newFiles[editingIndex] = {
             ...newFiles[editingIndex],
             file: editedFile,
             preview: URL.createObjectURL(editedFile),
-            edited: true
+            edited: true,
+            metadata // Store metadata (e.g. video trim)
         };
         setMediaFiles(newFiles);
         setEditingIndex(null);
@@ -104,8 +105,11 @@ const ReportForm = () => {
         } else if (mediaFiles.length >= 1) {
             data.append('postType', 'media');
             // Append all media files
-            mediaFiles.forEach((item) => {
+            mediaFiles.forEach((item, index) => {
                 data.append('media', item.file);
+                if (item.metadata) {
+                    data.append(`metadata_${index}`, JSON.stringify(item.metadata));
+                }
             });
         } else {
             // Fallback for posts with 0 media files (if not text post)
@@ -342,6 +346,22 @@ const ReportForm = () => {
                                                         objectFit: 'cover'
                                                     }}
                                                 />
+                                            )}
+
+                                            {/* Video Duration/Trim Badge */}
+                                            {item.type === 'video' && item.metadata && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    bottom: '3rem',
+                                                    right: '0.5rem',
+                                                    background: 'rgba(0,0,0,0.6)',
+                                                    color: 'white',
+                                                    padding: '0.2rem 0.4rem',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.7rem'
+                                                }}>
+                                                    ✂️ {item.metadata.startTime}s - {item.metadata.endTime}s
+                                                </div>
                                             )}
 
                                             {/* Order Badge */}

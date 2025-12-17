@@ -40,6 +40,7 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/announcements', require('./routes/announcements'));
 
 app.get('/', (req, res) => {
     res.send('Anonymous Reporting API is running');
