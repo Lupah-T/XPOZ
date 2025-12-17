@@ -185,27 +185,33 @@ const ReportForm = () => {
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    {/* Mode Selector */}
+                    {/* Mode Selector - Tabs */}
                     <div style={{
-                        display: 'flex',
-                        gap: '0.5rem',
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        background: 'rgba(255,255,255,0.05)',
+                        padding: '0.25rem',
+                        borderRadius: '8px',
                         marginBottom: '1.5rem',
-                        borderBottom: '2px solid rgba(255,255,255,0.1)',
-                        paddingBottom: '0.5rem'
+                        border: '1px solid rgba(255,255,255,0.1)'
                     }}>
                         <button
                             type="button"
                             onClick={() => setPostMode('media')}
                             style={{
-                                flex: 1,
                                 padding: '0.75rem',
                                 background: postMode === 'media' ? '#a855f7' : 'transparent',
                                 border: 'none',
                                 borderRadius: '6px',
-                                color: 'white',
+                                color: postMode === 'media' ? 'white' : '#94a3b8',
                                 fontWeight: '600',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                outline: 'none'
                             }}
                         >
                             📸 Media Post
@@ -214,15 +220,19 @@ const ReportForm = () => {
                             type="button"
                             onClick={() => setPostMode('text')}
                             style={{
-                                flex: 1,
                                 padding: '0.75rem',
                                 background: postMode === 'text' ? '#a855f7' : 'transparent',
                                 border: 'none',
                                 borderRadius: '6px',
-                                color: 'white',
+                                color: postMode === 'text' ? 'white' : '#94a3b8',
                                 fontWeight: '600',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                outline: 'none'
                             }}
                         >
                             ✨ Text Post

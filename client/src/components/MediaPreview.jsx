@@ -6,6 +6,7 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
+    const [aspect, setAspect] = useState(null); // 'null' for Free/All-round crop
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [processing, setProcessing] = useState(false);
 
@@ -16,6 +17,13 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
     const handleSave = async () => {
         try {
             setProcessing(true);
+            if (!croppedAreaPixels) {
+                // If user clicks save too fast or there's an issue
+                alert('Please adjust the crop area slightly before saving.');
+                setProcessing(false);
+                return;
+            }
+
             const croppedImage = await getCroppedImg(
                 URL.createObjectURL(file),
                 croppedAreaPixels,
@@ -142,7 +150,7 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
                     crop={crop}
                     zoom={zoom}
                     rotation={rotation}
-                    aspect={null}
+                    aspect={aspect}
                     onCropChange={setCrop}
                     onCropComplete={onCropComplete}
                     onZoomChange={setZoom}
@@ -205,6 +213,38 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
                     </label>
                 </div>
 
+                {/* Aspect Ratio Controls */}
+                <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    justifyContent: 'center',
+                    marginBottom: '1rem',
+                    flexWrap: 'wrap'
+                }}>
+                    {[
+                        { label: 'Free', value: null },
+                        { label: '1:1', value: 1 / 1 },
+                        { label: '4:5', value: 4 / 5 },
+                        { label: '16:9', value: 16 / 9 }
+                    ].map((ratio) => (
+                        <button
+                            key={ratio.label}
+                            onClick={() => setAspect(ratio.value)}
+                            className="btn"
+                            style={{
+                                background: aspect === ratio.value ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                                padding: '0.4rem 0.8rem',
+                                fontSize: '0.8rem',
+                                border: 'none',
+                                color: 'white',
+                                borderRadius: '4px'
+                            }}
+                        >
+                            {ratio.label}
+                        </button>
+                    ))}
+                </div>
+
                 {/* Quick Actions */}
                 <div style={{
                     display: 'flex',
@@ -224,18 +264,11 @@ const MediaPreview = ({ file, onSave, onCancel, type = 'image' }) => {
                         🔄 Rotate 90°
                     </button>
                     <button
-                        onClick={() => setRotation(0)}
-                        className="btn"
-                        style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            padding: '0.5rem 1rem',
-                            fontSize: '0.9rem'
+                        onClick={() => {
+                            setZoom(1);
+                            setRotation(0);
+                            setAspect(null);
                         }}
-                    >
-                        ↻ Reset Rotation
-                    </button>
-                    <button
-                        onClick={() => { setZoom(1); setRotation(0); }}
                         className="btn"
                         style={{
                             background: 'rgba(255,255,255,0.1)',
