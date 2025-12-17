@@ -241,12 +241,27 @@ router.delete('/:id', auth, async (req, res) => {
         const report = await Report.findById(req.params.id);
         if (!report) return res.status(404).json({ message: 'Report not found' });
 
-        // Verify the user is the author
+        // Check if user is the author
         if (report.author.toString() !== req.user.id) {
+            // If not author, check if Admin
+            // We need to fetch the user's role. Since auth middleware only decodes token, 
+            // we should ideally fetch user from DB if role isn't in token. 
+            // Assuming role IS in token for performance, OR we fetch user.
+            // Let's safe fetch.
+            const user = await User.findById(req.user.id);
+
+            if (user && user.role === 'admin') {
+                // Admin Soft Delete
+                report.status = 'moderated';
+                report.moderationReason = req.body.reason || 'Irrelevant content: This post does not meet the platform guidelines for real-world faults.';
+                await report.save();
+                return res.json({ message: 'Post moderated successfully' });
+            }
+
             return res.status(403).json({ message: 'Access denied: You can only delete your own posts' });
         }
 
-        // Delete the report
+        // Author Hard Delete
         await Report.deleteOne({ _id: req.params.id });
         res.json({ message: 'Post deleted successfully' });
     } catch (err) {

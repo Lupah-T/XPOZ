@@ -65,8 +65,12 @@ const reportSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'investigating', 'resolved', 'dismissed'],
+    enum: ['pending', 'investigating', 'resolved', 'dismissed', 'moderated'], // Added 'moderated'
     default: 'pending'
+  },
+  moderationReason: {
+    type: String,
+    default: ''
   },
   evidenceType: {
     type: String,
