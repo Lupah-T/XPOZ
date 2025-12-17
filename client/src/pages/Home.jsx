@@ -92,13 +92,26 @@ const Home = () => {
         }
     };
 
+    // Helper to constructing media URLs
+    const getMediaUrl = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        // removing leading slash if present to avoid double slashes with API_URL which usually lacks trailing slash, 
+        // or ensure join is clean. 
+        // Assuming API_URL has no trailing slash.
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        return `${API_URL}/${cleanPath}`;
+    };
+
     const handleDelete = async (reportId, isAdminMod = false) => {
         let reason = null;
         if (isAdminMod) {
-            reason = prompt('Reason for removal (e.g., Irrelevant content):', 'Irrelevant content: This post does not meet the platform guidelines.');
+            // Admin Action: Soft Delete (Moderation)
+            reason = prompt('Reason for removing this post (Visible to users):', 'Irrelevant content');
             if (reason === null) return; // Cancelled
         } else {
-            if (!window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+            // User Action: Hard Delete
+            if (!window.confirm('Are you sure you want to delete this post instantly? This action cannot be undone.')) {
                 return;
             }
         }
@@ -126,11 +139,9 @@ const Home = () => {
             if (res.ok) {
                 if (isAdminMod) {
                     const data = await res.json();
-                    // Update state to show moderated status
                     setReports(reports.map(r => r._id === reportId ? { ...r, status: 'moderated', moderationReason: data.report?.moderationReason || reason } : r));
-                    alert('Post moderated successfully');
+                    // alert('Post moderated successfully'); // Optional: user saw the update
                 } else {
-                    // Remove the report from state
                     setReports(reports.filter(r => r._id !== reportId));
                     alert('Post deleted successfully');
                 }
@@ -254,16 +265,16 @@ const Home = () => {
                                                     <div key={idx} style={{ minWidth: '100%', scrollSnapAlign: 'center', position: 'relative', display: 'flex', justifyContent: 'center' }}>
                                                         {item.type === 'video' ? (
                                                             <VideoPlayer
-                                                                src={`${API_URL}/${item.url}`}
-                                                                poster={item.thumbnail ? `${API_URL}/${item.thumbnail}` : undefined}
+                                                                src={getMediaUrl(item.url)}
+                                                                poster={item.thumbnail ? getMediaUrl(item.thumbnail) : undefined}
                                                                 startTime={item.metadata?.startTime}
                                                                 endTime={item.metadata?.endTime}
                                                             />
                                                         ) : (
                                                             <img
-                                                                src={`${API_URL}/${item.url}`}
+                                                                src={getMediaUrl(item.url)}
                                                                 alt="Post content"
-                                                                onClick={() => setLightboxMedia({ url: `${API_URL}/${item.url}`, type: 'image' })}
+                                                                onClick={() => setLightboxMedia({ url: getMediaUrl(item.url), type: 'image' })}
                                                                 style={{ width: '100%', height: 'auto', maxHeight: '80vh', objectFit: 'contain', cursor: 'zoom-in' }}
                                                             />
                                                         )}
@@ -280,9 +291,9 @@ const Home = () => {
                                             <>
                                                 {report.evidenceType === 'image' && (
                                                     <img
-                                                        src={`${API_URL}/${report.evidenceUrl}`}
+                                                        src={getMediaUrl(report.evidenceUrl)}
                                                         alt="Evidence"
-                                                        onClick={() => setLightboxMedia({ url: `${API_URL}/${report.evidenceUrl}`, type: 'image' })}
+                                                        onClick={() => setLightboxMedia({ url: getMediaUrl(report.evidenceUrl), type: 'image' })}
                                                         style={{ width: '100%', height: 'auto', maxHeight: '80vh', objectFit: 'contain', cursor: 'zoom-in' }}
                                                     />
                                                 )}

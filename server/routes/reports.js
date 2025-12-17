@@ -41,6 +41,14 @@ router.get('/', async (req, res) => {
         let query = {};
         if (author) query.author = author;
 
+        // Filter out moderated posts older than 3 days
+        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        query.$or = [
+            { status: { $ne: 'moderated' } }, // Not moderated
+            { status: 'moderated', moderatedAt: { $gt: threeDaysAgo } }, // Moderated recently
+            { status: 'moderated', moderatedAt: { $exists: false } } // Moderated but legacy (keep them or hide? Let's keep)
+        ];
+
         const reports = await Report.find(query)
             .sort({ timestamp: -1 })
             .populate('author', 'pseudoName avatarUrl effects'); // Populate avatarUrl for UI
@@ -250,6 +258,7 @@ router.put('/:id/moderate', auth, async (req, res) => {
 
         report.status = 'moderated';
         report.moderationReason = req.body.reason || 'Irrelevant content: This post has been removed by moderators.';
+        report.moderatedAt = Date.now();
         await report.save();
 
         res.json({ message: 'Post moderated successfully', report });

@@ -72,6 +72,9 @@ const reportSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  moderatedAt: {
+    type: Date // To track when it was moderated for retention policies
+  },
   evidenceType: {
     type: String,
     enum: ['text', 'image', 'video', 'link', 'audio', 'none'],

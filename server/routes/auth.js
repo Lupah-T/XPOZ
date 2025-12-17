@@ -14,8 +14,17 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ message: 'Please enter all fields' });
     }
 
+    // Password Complexity Check
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({
+            message: 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a special character.'
+        });
+    }
+
     try {
         const existingUser = await User.findOne({ pseudoName });
+
         if (existingUser) {
             return res.status(400).json({ message: 'Pseudo-name already taken' });
         }
@@ -115,6 +124,16 @@ router.post('/recover', async (req, res) => {
 
         const isMatch = await bcrypt.compare(securityAnswer.toLowerCase().trim(), user.securityAnswer);
         if (!isMatch) return res.status(400).json({ message: 'Incorrect security answer' });
+
+        if (!isMatch) return res.status(400).json({ message: 'Incorrect security answer' });
+
+        // Password Complexity Check
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            return res.status(400).json({
+                message: 'New password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a special character.'
+            });
+        }
 
         // Reset Password
         const salt = await bcrypt.genSalt(10);
