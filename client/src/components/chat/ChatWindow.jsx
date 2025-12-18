@@ -46,16 +46,28 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         const handleReceiveMessage = (message) => {
             console.log('Received message:', message);
             // Only add if it belongs to current conversation
-            if (message.sender === selectedUser._id || message.recipient === selectedUser._id) {
-                setMessages(prev => [...prev, message]);
+            if ((message.sender === selectedUser._id && message.recipient === user.id) ||
+                (message.sender === user.id && message.recipient === selectedUser._id)) {
+
+                // Deduplicate based on _id if it exists
+                setMessages(prev => {
+                    const exists = prev.some(m => m._id === message._id);
+                    if (exists) return prev;
+                    return [...prev, message];
+                });
                 scrollToBottom();
             }
         };
 
         const handleMessageSent = (message) => {
-            // Only add if it matches current conversation (it should)
-            if (message.recipient === selectedUser._id) {
-                setMessages(prev => [...prev, message]);
+            console.log('Message sent confirmed:', message);
+            // Ensure it's for the current conversation
+            if (message.recipient === selectedUser._id || message.sender === selectedUser._id) {
+                setMessages(prev => {
+                    const exists = prev.some(m => m._id === message._id);
+                    if (exists) return prev;
+                    return [...prev, message];
+                });
                 scrollToBottom();
             }
         };
@@ -79,7 +91,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
             socket.off('typing-start', handleTypingStart);
             socket.off('typing-stop', handleTypingStop);
         };
-    }, [socket, selectedUser]);
+    }, [socket, selectedUser, user.id]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -130,7 +142,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                     style={{
                         background: 'none',
                         border: 'none',
-                        color: '#cbd5e1',
+                        color: '#f8fafc',
                         fontSize: '1.5rem',
                         cursor: 'pointer',
                         display: window.innerWidth < 768 ? 'block' : 'none'
@@ -140,18 +152,30 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                 </button>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <img
-                        src={selectedUser.avatarUrl || 'https://via.placeholder.com/40'}
-                        alt={selectedUser.pseudoName}
-                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                        <img
+                            src={selectedUser.avatarUrl || 'https://via.placeholder.com/40'}
+                            alt={selectedUser.pseudoName}
+                            style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                        {selectedUser.isOnline && (
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '0',
+                                right: '0',
+                                width: '12px',
+                                height: '12px',
+                                backgroundColor: '#22c55e',
+                                borderRadius: '50%',
+                                border: '2px solid #0f172a'
+                            }} />
+                        )}
+                    </div>
+
                     <div>
-                        <h3 style={{ margin: 0, fontSize: '1rem' }}>{selectedUser.pseudoName}</h3>
-                        {/* Status (Online/Typing) */}
-                        <div style={{ fontSize: '0.8rem', color: '#a855f7', height: '1.2em' }}>
-                            {isTyping ? 'Typing...' : (
-                                selectedUser.isOnline ? 'Online' : '' // 'Last seen...'
-                            )}
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: '#f8fafc' }}>{selectedUser.pseudoName}</h3>
+                        <div style={{ fontSize: '0.8rem', color: isTyping ? '#a855f7' : '#94a3b8', height: '1.2em', transition: 'color 0.3s' }}>
+                            {isTyping ? 'Typing...' : (selectedUser.isOnline ? 'Active now' : '')}
                         </div>
                     </div>
                 </div>
@@ -197,28 +221,31 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                     type="text"
                     value={newMessage}
                     onChange={handleInput}
-                    placeholder="Type a message..."
+                    placeholder="Message..."
                     style={{
                         flex: 1,
-                        padding: '10px 16px',
+                        padding: '12px 20px',
                         borderRadius: '24px',
                         border: '1px solid #334155',
-                        background: '#0f172a',
+                        background: '#1e293b',
                         color: 'white',
-                        outline: 'none'
+                        outline: 'none',
+                        fontSize: '0.95rem'
                     }}
                 />
                 <button
                     type="submit"
                     disabled={!newMessage.trim()}
                     style={{
-                        padding: '10px 20px',
-                        borderRadius: '24px',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
                         border: 'none',
-                        background: newMessage.trim() ? '#a855f7' : '#475569',
-                        color: 'white',
-                        cursor: newMessage.trim() ? 'pointer' : 'not-allowed',
-                        transition: 'background 0.2s'
+                        background: 'none',
+                        color: newMessage.trim() ? '#3b82f6' : '#475569', // Instagram blue
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        cursor: newMessage.trim() ? 'pointer' : 'default',
+                        transition: 'color 0.2s'
                     }}
                 >
                     Send

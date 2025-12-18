@@ -29,7 +29,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/anonymous_r
                 }
 
                 const admin = new User({
-                    pseudoName: 'AdminUser',
+                    pseudoName: 'Admin',
                     password: hashedPassword,
                     role: 'admin',
                     isActive: true

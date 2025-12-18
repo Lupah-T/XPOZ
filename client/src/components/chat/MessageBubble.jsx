@@ -19,7 +19,7 @@ const MessageBubble = ({ message, isOwn, previousMessage }) => {
                 borderRadius: '16px',
                 borderTopRightRadius: isOwn ? '4px' : '16px',
                 borderTopLeftRadius: isOwn ? '16px' : '4px',
-                backgroundColor: isOwn ? '#a855f7' : '#334155',
+                backgroundColor: isOwn ? '#3b82f6' : '#262626', // Blue for own, Dark Gray for others
                 color: '#f8fafc',
                 wordWrap: 'break-word',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
