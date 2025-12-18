@@ -84,8 +84,8 @@ const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDel
                                         src={att.url}
                                         alt={att.name || 'attachment'}
                                         style={{
-                                            maxWidth: '250px',
-                                            maxHeight: '250px',
+                                            maxWidth: '200px',
+                                            maxHeight: '200px',
                                             borderRadius: '8px',
                                             cursor: 'pointer',
                                             objectFit: 'cover'
@@ -120,8 +120,8 @@ const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDel
                                         src={att.url}
                                         controls
                                         style={{
-                                            maxWidth: '250px',
-                                            maxHeight: '250px',
+                                            maxWidth: '200px',
+                                            maxHeight: '200px',
                                             borderRadius: '8px'
                                         }}
                                     />
@@ -152,7 +152,7 @@ const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDel
                                     background: '#1e293b',
                                     padding: '12px',
                                     borderRadius: '8px',
-                                    minWidth: '250px'
+                                    minWidth: '200px'
                                 }}>
                                     <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span>🎵</span>

@@ -24,10 +24,12 @@ const messageSchema = new mongoose.Schema({
         url: String,
         type: {
             type: String,
-            enum: ['image', 'video', 'file'],
-            default: 'image'
+            enum: ['image', 'video', 'audio', 'pdf', 'document', 'spreadsheet', 'file'],
+            default: 'file'
         },
-        name: String
+        name: String,
+        size: Number,
+        mimeType: String
     }],
     read: {
         type: Boolean,
