@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
     socket.on('user-online', async ({ token }) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
-            const userId = decoded.user.id;
+            const userId = decoded.id; // Payload is { id: ... } not { user: { id: ... } }
 
             socket.userId = userId;
             onlineUsers.set(userId, socket.id);
