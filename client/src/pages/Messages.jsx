@@ -67,6 +67,29 @@ const Messages = () => {
         setSelectedUser(null);
     };
 
+    const handleDeleteConversation = async (userId) => {
+        try {
+            const res = await fetch(`${API_URL}/api/messages/conversations/${userId}`, {
+                method: 'DELETE',
+                headers: { 'x-auth-token': token }
+            });
+
+            if (res.ok) {
+                // Remove conversation from local state
+                setConversations(prevConv => prevConv.filter(conv => conv._id !== userId));
+
+                // If the deleted conversation was selected, clear selection
+                if (selectedUser && selectedUser._id === userId) {
+                    setSelectedUser(null);
+                }
+            } else {
+                console.error('Failed to delete conversation');
+            }
+        } catch (err) {
+            console.error('Error deleting conversation:', err);
+        }
+    };
+
     return (
         <div style={{ maxHeight: '100vh', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', paddingBottom: '60px' }}>
             <Header />
@@ -96,6 +119,7 @@ const Messages = () => {
                             selectedUser={selectedUser}
                             onSelectUser={handleSelectUser}
                             onlineUsers={onlineUsers}
+                            onDeleteConversation={handleDeleteConversation}
                         />
                     )}
                 </div>
@@ -134,3 +158,4 @@ const Messages = () => {
 };
 
 export default Messages;
+

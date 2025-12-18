@@ -225,6 +225,35 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
+// Delete entire conversation with a user
+router.delete('/conversations/:userId', auth, async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const otherUserId = req.params.userId;
+
+        // Find all messages between these two users
+        const result = await Message.updateMany(
+            {
+                $or: [
+                    { sender: currentUserId, recipient: otherUserId },
+                    { sender: otherUserId, recipient: currentUserId }
+                ]
+            },
+            {
+                $addToSet: { deletedFor: currentUserId } // Add to array if not already present
+            }
+        );
+
+        res.json({
+            msg: 'Conversation deleted successfully',
+            modifiedCount: result.modifiedCount
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
 // Upload chat media and files
 router.post('/upload', [auth, upload.single('file')], async (req, res) => {
     try {
