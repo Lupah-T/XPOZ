@@ -4,6 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 import Header from '../components/Header';
 
+// Helper function to get the correct media URL
+const getMediaUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${API_URL}/${url}`;
+};
+
 const Users = () => {
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
@@ -178,7 +185,7 @@ const Users = () => {
                                         flexShrink: 0
                                     }}>
                                         {targetUser.avatarUrl ? (
-                                            <img src={`${API_URL}/${targetUser.avatarUrl}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={getMediaUrl(targetUser.avatarUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
                                             '👤'
                                         )}

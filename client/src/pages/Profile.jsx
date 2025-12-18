@@ -4,6 +4,17 @@ import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 
+// Helper function to get the correct media URL
+const getMediaUrl = (url) => {
+    if (!url) return null;
+    // If URL is already absolute (starts with http:// or https://), use it directly
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    // Otherwise, prepend API_URL for relative paths
+    return `${API_URL}/${url}`;
+};
+
 const Profile = () => {
     const { id } = useParams();
     const { user: currentUser, token } = useAuth();
@@ -121,7 +132,7 @@ const Profile = () => {
 
                     <div style={{ flexShrink: 0 }}>
                         {profileUser.avatarUrl ? (
-                            <img src={`${API_URL}/${profileUser.avatarUrl}`} alt="Avatar" style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover' }} />
+                            <img src={getMediaUrl(profileUser.avatarUrl)} alt="Avatar" style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover' }} />
                         ) : (
                             <div style={{ width: '150px', height: '150px', borderRadius: '50%', background: 'linear-gradient(45deg, #6d28d9, #ec4899)' }}></div>
                         )}
@@ -239,9 +250,9 @@ const Profile = () => {
                         {posts.map(post => (
                             <div key={post._id} style={{ aspectRatio: '1/1', background: '#334155', borderRadius: '4px', overflow: 'hidden', position: 'relative', cursor: 'pointer' }}>
                                 {post.evidenceType === 'image' ? (
-                                    <img src={`${API_URL}/${post.evidenceUrl}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img src={getMediaUrl(post.evidenceUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : post.evidenceType === 'video' ? (
-                                    <video src={`${API_URL}/${post.evidenceUrl}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <video src={getMediaUrl(post.evidenceUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
                                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', textAlign: 'center', color: '#94a3b8', background: 'rgba(255,255,255,0.05)' }}>
                                         {post.title}

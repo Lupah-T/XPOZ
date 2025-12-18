@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 
+// Helper function to get the correct media URL
+const getMediaUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${API_URL}/${url}`;
+};
+
 const Header = () => {
     const { user, logout } = useAuth();
     const [showAnnouncements, setShowAnnouncements] = React.useState(false);
@@ -119,7 +126,7 @@ const Header = () => {
                         </button>
                         <Link to={user ? `/profile/${user.id}` : '/auth'} className="nav-icon" title="Profile">
                             <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#cbd5e1', overflow: 'hidden' }}>
-                                {user?.avatarUrl && <img src={`${API_URL}/${user.avatarUrl}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                {user?.avatarUrl && <img src={getMediaUrl(user.avatarUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                             </div>
                         </Link>
                         {user && (

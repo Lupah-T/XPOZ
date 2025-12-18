@@ -209,7 +209,7 @@ const Home = () => {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                             <a href={`/profile/${report.author?._id}`}>
                                                 {report.author?.avatarUrl ? (
-                                                    <img src={`${API_URL}/${report.author.avatarUrl}`} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                    <img src={getMediaUrl(report.author.avatarUrl)} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
                                                 ) : (
                                                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#334155' }}></div>
                                                 )}
@@ -298,10 +298,10 @@ const Home = () => {
                                                     />
                                                 )}
                                                 {report.evidenceType === 'video' && (
-                                                    <video controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '100%', maxHeight: '80vh' }} />
+                                                    <video controls src={getMediaUrl(report.evidenceUrl)} style={{ width: '100%', maxHeight: '80vh' }} />
                                                 )}
                                                 {report.evidenceType === 'audio' && (
-                                                    <audio controls src={`${API_URL}/${report.evidenceUrl}`} style={{ width: '90%' }} />
+                                                    <audio controls src={getMediaUrl(report.evidenceUrl)} style={{ width: '90%' }} />
                                                 )}
                                                 {(report.evidenceType === 'none' || (!report.evidenceType && !report.media)) && (
                                                     <div style={{ padding: '2rem', textAlign: 'center', color: '#fff' }}>
