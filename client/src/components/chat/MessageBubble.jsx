@@ -17,14 +17,14 @@ const MessageBubble = ({ message, isOwn, previousMessage }) => {
                 maxWidth: '70%',
                 padding: '8px 12px',
                 borderRadius: '16px',
-                borderTopRightRadius: isOwn ? '4px' : '16px',
-                borderTopLeftRadius: isOwn ? '16px' : '4px',
-                backgroundColor: isOwn ? '#3b82f6' : '#262626', // Blue for own, Dark Gray for others
+                // Sent: rounded pill, Received: no bubble (transparent)
+                backgroundColor: isOwn ? '#374151' : 'transparent',
                 color: '#f8fafc',
                 wordWrap: 'break-word',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                // Remove shadow for cleaner look
+                boxShadow: 'none'
             }}>
-                <div style={{ fontSize: '0.95rem', lineHeight: '1.5' }}>
+                <div style={{ fontSize: '1rem', lineHeight: '1.6' }}>
                     {message.content}
                 </div>
                 <div style={{

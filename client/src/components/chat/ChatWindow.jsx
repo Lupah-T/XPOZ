@@ -7,37 +7,78 @@ import MessageBubble from './MessageBubble';
 const ChatWindow = ({ selectedUser, onBack }) => {
     const { user, token } = useAuth();
     const { socket } = useSocket();
+
+    // State
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
     const [isTyping, setIsTyping] = useState(false);
+
+    // Refs
     const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
     const typingTimeoutRef = useRef(null);
 
-    // Fetch message history
-    useEffect(() => {
+    // Fetch initial messages or load more
+    const fetchMessages = async (before = null) => {
         if (!selectedUser) return;
 
-        const fetchMessages = async () => {
-            setLoading(true);
-            try {
-                const res = await fetch(`${API_URL}/api/messages/${selectedUser._id}`, {
-                    headers: { 'x-auth-token': token }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setMessages(data);
-                    scrollToBottom();
-                }
-            } catch (err) {
-                console.error('Error fetching messages:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
+        try {
+            const url = `${API_URL}/api/messages/${selectedUser._id}?limit=20${before ? `&before=${before}` : ''}`;
+            const res = await fetch(url, {
+                headers: { 'x-auth-token': token }
+            });
 
-        fetchMessages();
+            if (res.ok) {
+                const data = await res.json();
+                if (data.length < 20) setHasMore(false);
+
+                if (before) {
+                    setMessages(prev => [...data, ...prev]);
+                    // Scroll position adjustment handled in handleScroll
+                } else {
+                    setMessages(data);
+                    setHasMore(data.length === 20);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching messages:', err);
+        }
+    };
+
+    // Initial load
+    useEffect(() => {
+        setLoading(true);
+        fetchMessages().then(() => {
+            setLoading(false);
+            scrollToBottom();
+        });
     }, [selectedUser, token]);
+
+    // Scroll listener for infinite scroll
+    const handleScroll = async (e) => {
+        if (e.target.scrollTop === 0 && hasMore && !loadingMore && !loading) {
+            const firstMsg = messages[0];
+            if (firstMsg && firstMsg.createdAt) {
+                setLoadingMore(true);
+                // Save current height to adjust scroll later
+                const oldHeight = e.target.scrollHeight;
+
+                await fetchMessages(firstMsg.createdAt);
+
+                // Adjust scroll so we don't jump to top
+                // Need to use requestAnimationFrame or wait for DOM update
+                requestAnimationFrame(() => {
+                    const newHeight = e.target.scrollHeight;
+                    e.target.scrollTop = newHeight - oldHeight;
+                });
+
+                setLoadingMore(false);
+            }
+        }
+    };
 
     // Handle real-time messages
     useEffect(() => {
@@ -108,7 +149,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
             content: newMessage
         });
 
-        // Clear input (optimistic update could happen here but we wait for 'message-sent' event for simplicity and ID sync)
+        // Clear input
         setNewMessage('');
     };
 
@@ -127,12 +168,12 @@ const ChatWindow = ({ selectedUser, onBack }) => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#1e293b' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0f172a' }}>
             {/* Header */}
             <div style={{
                 padding: '1rem',
-                borderBottom: '1px solid var(--glass-border)',
-                background: 'var(--glass-bg)',
+                borderBottom: '1px solid #334155',
+                background: '#0f172a', // Darker header
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem'
@@ -175,82 +216,109 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                     <div>
                         <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: '#f8fafc' }}>{selectedUser.pseudoName}</h3>
                         <div style={{ fontSize: '0.8rem', color: isTyping ? '#a855f7' : '#94a3b8', height: '1.2em', transition: 'color 0.3s' }}>
-                            {isTyping ? 'Typing...' : (selectedUser.isOnline ? 'Active now' : '')}
+                            {isTyping ? 'Typing...' : (
+                                selectedUser.isOnline ? 'Active now' : (
+                                    selectedUser.lastSeen ? `Last seen ${new Date(selectedUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+                                )
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Messages Area */}
-            <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '1rem',
-                display: 'flex',
-                flexDirection: 'column'
-            }}>
-                {loading ? (
-                    <div style={{ textAlign: 'center', marginTop: '20px', color: '#94a3b8' }}>Loading chat...</div>
-                ) : (
-                    <>
-                        {messages.map((msg, index) => (
-                            <MessageBubble
-                                key={msg._id || index}
-                                message={msg}
-                                isOwn={msg.sender === user.id}
-                                previousMessage={index > 0 ? messages[index - 1] : null}
-                            />
-                        ))}
-                        <div ref={messagesEndRef} />
-                    </>
-                )}
+            <div
+                onScroll={handleScroll}
+                ref={messagesContainerRef}
+                style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center' // Center messages container
+                }}
+            >
+                <div style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column' }}>
+                    {loadingMore && <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.8rem', padding: '1rem' }}>Loading older messages...</div>}
+
+                    {loading ? (
+                        <div style={{ textAlign: 'center', marginTop: '20px', color: '#94a3b8' }}>Loading chat...</div>
+                    ) : (
+                        <>
+                            {messages.map((msg, index) => (
+                                <MessageBubble
+                                    key={msg._id || index}
+                                    message={msg}
+                                    isOwn={msg.sender === user.id}
+                                    previousMessage={index > 0 ? messages[index - 1] : null}
+                                />
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* Input Area */}
-            <form
-                onSubmit={handleSendMessage}
-                style={{
-                    padding: '1rem',
-                    borderTop: '1px solid var(--glass-border)',
-                    background: 'var(--glass-bg)',
-                    display: 'flex',
-                    gap: '0.5rem'
-                }}
-            >
-                <input
-                    type="text"
-                    value={newMessage}
-                    onChange={handleInput}
-                    placeholder="Message..."
+            <div style={{
+                padding: '1rem',
+                // Transparent bg to show floating effect
+                background: 'transparent',
+                display: 'flex',
+                justifyContent: 'center'
+            }}>
+                <form
+                    onSubmit={handleSendMessage}
                     style={{
-                        flex: 1,
-                        padding: '12px 20px',
+                        width: '100%',
+                        maxWidth: '800px', // Constrain width like the example
+                        background: '#334155', // Lighter gray than bg
                         borderRadius: '24px',
-                        border: '1px solid #334155',
-                        background: '#1e293b',
-                        color: 'white',
-                        outline: 'none',
-                        fontSize: '0.95rem'
-                    }}
-                />
-                <button
-                    type="submit"
-                    disabled={!newMessage.trim()}
-                    style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: 'none',
-                        color: newMessage.trim() ? '#3b82f6' : '#475569', // Instagram blue
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
-                        cursor: newMessage.trim() ? 'pointer' : 'default',
-                        transition: 'color 0.2s'
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        border: '1px solid #475569'
                     }}
                 >
-                    Send
-                </button>
-            </form>
+                    <input
+                        type="text"
+                        value={newMessage}
+                        onChange={handleInput}
+                        placeholder={`Message ${selectedUser.pseudoName}...`}
+                        style={{
+                            flex: 1,
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'white',
+                            outline: 'none',
+                            fontSize: '1rem',
+                            padding: '4px 8px'
+                        }}
+                    />
+                    <button
+                        type="submit"
+                        disabled={!newMessage.trim()}
+                        style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            border: 'none',
+                            background: newMessage.trim() ? '#f8fafc' : '#475569',
+                            color: newMessage.trim() ? 'black' : '#94a3b8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: newMessage.trim() ? 'pointer' : 'default',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <span style={{ fontSize: '1.2rem', marginTop: '-2px' }}>↑</span>
+                    </button>
+                </form>
+            </div>
         </div>
     );
 };

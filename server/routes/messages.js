@@ -80,16 +80,27 @@ router.get('/:userId', auth, async (req, res) => {
         const currentUserId = req.user.id;
         const otherUserId = req.params.userId;
 
-        const messages = await Message.find({
+        const limit = parseInt(req.query.limit) || 20;
+        const before = req.query.before;
+
+        let query = {
             $or: [
                 { sender: currentUserId, recipient: otherUserId },
                 { sender: otherUserId, recipient: currentUserId }
             ],
             deletedFor: { $ne: currentUserId }
-        })
-            .sort({ createdAt: 1 });
+        };
 
-        res.json(messages);
+        if (before) {
+            query.createdAt = { $lt: new Date(before) };
+        }
+
+        const messages = await Message.find(query)
+            .sort({ createdAt: -1 }) // Sort desc for pagination
+            .limit(limit);
+
+        // Reverse back to chronological order for display
+        res.json(messages.reverse());
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
