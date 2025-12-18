@@ -36,7 +36,21 @@ router.get('/conversations', auth, async (req, res) => {
                             else: "$sender"
                         }
                     },
-                    lastMessage: { $first: "$$ROOT" }
+                    lastMessage: { $first: "$$ROOT" },
+                    unreadCount: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ["$recipient", new mongoose.Types.ObjectId(userId)] },
+                                        { $eq: ["$read", false] }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    }
                 }
             },
             {
@@ -61,8 +75,10 @@ router.get('/conversations', auth, async (req, res) => {
                         content: "$lastMessage.content",
                         createdAt: "$lastMessage.createdAt",
                         read: "$lastMessage.read",
-                        sender: "$lastMessage.sender"
-                    }
+                        sender: "$lastMessage.sender",
+                        delivered: "$lastMessage.delivered"
+                    },
+                    unreadCount: "$unreadCount"
                 }
             },
             {

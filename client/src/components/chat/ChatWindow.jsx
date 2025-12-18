@@ -6,7 +6,7 @@ import MessageBubble from './MessageBubble';
 
 const ChatWindow = ({ selectedUser, onBack }) => {
     const { user, token } = useAuth();
-    const { socket } = useSocket();
+    const { socket, markLocalAsRead } = useSocket();
 
     // State
     const [messages, setMessages] = useState([]);
@@ -165,7 +165,10 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                 msg.sender === selectedUser._id ? { ...msg, read: true } : msg
             ));
         }
-    }, [messages, selectedUser, socket, user.id]);
+
+        // Also clear local unread count badge
+        markLocalAsRead(selectedUser._id);
+    }, [messages, selectedUser, socket, user.id, markLocalAsRead]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

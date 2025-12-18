@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSocket } from '../../context/SocketContext';
 
 const ConversationList = ({ conversations, selectedUser, onSelectUser, onlineUsers }) => {
     const navigate = useNavigate();
+    const { unreadCounts } = useSocket();
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -95,9 +97,29 @@ const ConversationList = ({ conversations, selectedUser, onSelectUser, onlineUse
                                     <h4 style={{ margin: 0, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {conv.pseudoName}
                                     </h4>
-                                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                        {conv.lastMessage && formatDate(conv.lastMessage.createdAt)}
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                            {conv.lastMessage && formatDate(conv.lastMessage.createdAt)}
+                                        </span>
+                                        {/* Unread Badge */}
+                                        {(unreadCounts.get(conv._id) > 0) && (
+                                            <div style={{
+                                                background: '#ef4444',
+                                                color: 'white',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 'bold',
+                                                minWidth: '18px',
+                                                height: '18px',
+                                                borderRadius: '50%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                padding: '0 4px'
+                                            }}>
+                                                {unreadCounts.get(conv._id)}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <p style={{
