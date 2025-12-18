@@ -32,8 +32,8 @@ const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDel
                     maxWidth: '70%',
                     padding: '8px 12px',
                     borderRadius: '16px',
-                    // Sent: rounded pill, Received: no bubble (transparent)
-                    backgroundColor: isOwn ? '#374151' : 'transparent',
+                    // Sent: rounded pill, Received: rounded pill (darker)
+                    backgroundColor: isOwn ? '#374151' : '#1e293b',
                     color: '#f8fafc',
                     wordWrap: 'break-word',
                     // Remove shadow for cleaner look
@@ -113,15 +113,21 @@ const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDel
                 }}>
                     {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     {isOwn && (
-                        <span style={{ marginLeft: '4px', fontSize: '0.8rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.4', fontSize: '0.6rem', marginLeft: '2px' }}>
                             {message.read ? (
-                                <span style={{ color: '#a855f7' }}>✓✓</span>
+                                <>
+                                    <span style={{ color: '#a855f7' }}>✓</span>
+                                    <span style={{ color: '#a855f7' }}>✓</span>
+                                </>
                             ) : message.delivered ? (
-                                <span style={{ color: '#94a3b8' }}>✓✓</span>
+                                <>
+                                    <span style={{ color: '#94a3b8' }}>✓</span>
+                                    <span style={{ color: '#94a3b8' }}>✓</span>
+                                </>
                             ) : (
-                                <span style={{ color: '#94a3b8' }}>✓</span>
+                                <span style={{ color: '#94a3b8', lineHeight: '1' }}>✓</span>
                             )}
-                        </span>
+                        </div>
                     )}
                 </div>
 
