@@ -14,6 +14,17 @@ export const SocketProvider = ({ children }) => {
     const [onlineUsers, setOnlineUsers] = useState(new Map()); // Map of userId -> status
     const { token, user } = useAuth();
 
+    // Notification Audio (Simple beep)
+    // You could replace this with a nice message.mp3 in public/ folder
+    const notificationSound = new Audio('/notification.mp3');
+
+    useEffect(() => {
+        // Request notification permission
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
+
     useEffect(() => {
         let newSocket;
         if (token && user) {
@@ -36,6 +47,20 @@ export const SocketProvider = ({ children }) => {
                     newMap.set(userId, { isOnline, lastSeen });
                     return newMap;
                 });
+            });
+
+            // Global Message Listener for Notifications
+            newSocket.on('receive-message', (message) => {
+                // Play sound
+                notificationSound.play().catch(e => console.log('Audio play failed', e));
+
+                // Show system notification if hidden
+                if (document.hidden && Notification.permission === 'granted') {
+                    new Notification('New Message', {
+                        body: message.content || 'Sent a media file',
+                        icon: '/vite.svg' // Placeholder icon
+                    });
+                }
             });
 
             setSocket(newSocket);

@@ -4,6 +4,9 @@ const mongoose = require('mongoose');
 const Message = require('../models/Message');
 const User = require('../models/User');
 const auth = require('../middleware/auth'); // Assuming you have an auth middleware
+const multer = require('multer');
+const { chatStorage } = require('../config/cloudinary');
+const upload = multer({ storage: chatStorage });
 
 // Get conversation list (users with last message)
 router.get('/conversations', auth, async (req, res) => {
@@ -97,7 +100,8 @@ router.get('/:userId', auth, async (req, res) => {
 
         const messages = await Message.find(query)
             .sort({ createdAt: -1 }) // Sort desc for pagination
-            .limit(limit);
+            .limit(limit)
+            .populate('replyTo', 'content sender attachments'); // Populate reply details
 
         // Reverse back to chronological order for display
         res.json(messages.reverse());
@@ -110,14 +114,15 @@ router.get('/:userId', auth, async (req, res) => {
 // Send a message
 router.post('/', auth, async (req, res) => {
     try {
-        const { recipientId, content, attachments } = req.body;
+        const { recipientId, content, attachments, replyTo } = req.body;
         const senderId = req.user.id;
 
         const newMessage = new Message({
             sender: senderId,
             recipient: recipientId,
             content,
-            attachments
+            attachments,
+            replyTo
         });
 
         const savedMessage = await newMessage.save();
@@ -167,19 +172,55 @@ router.delete('/:id', auth, async (req, res) => {
             return res.status(404).json({ msg: 'Message not found' });
         }
 
-        // Allow deletion if user is sender or recipient (for themselves)
+        // Check deletion mode: 'everyone' or 'self' (default)
+        const mode = req.query.mode;
         const userId = req.user.id;
-        if (message.sender.toString() !== userId && message.recipient.toString() !== userId) {
-            return res.status(401).json({ msg: 'User not authorized' });
-        }
 
-        // Add user to deletedFor array if not already there
-        if (!message.deletedFor.includes(userId)) {
-            message.deletedFor.push(userId);
+        if (mode === 'everyone') {
+            // Only sender can delete for everyone
+            if (message.sender.toString() !== userId) {
+                return res.status(401).json({ msg: 'Only sender can delete for everyone' });
+            }
+
+            // Soft delete: clear content/attachments and mark as deleted
+            // We don't remove the record to keep synchronization valid
+            message.content = 'This message was deleted';
+            message.attachments = [];
+            message.isDeletedAndReplaced = true; // Optional flag if schema allowed, but content replacement works
             await message.save();
-        }
 
-        res.json({ msg: 'Message deleted' });
+            return res.json({ msg: 'Message deleted for everyone', updatedMessage: message });
+        } else {
+            // Delete for self (default)
+            if (message.sender.toString() !== userId && message.recipient.toString() !== userId) {
+                return res.status(401).json({ msg: 'User not authorized' });
+            }
+
+            // Add user to deletedFor array if not already there
+            if (!message.deletedFor.includes(userId)) {
+                message.deletedFor.push(userId);
+                await message.save();
+            }
+            return res.json({ msg: 'Message deleted for you' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Upload chat media
+router.post('/upload', [auth, upload.single('file')], async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ msg: 'No file uploaded' });
+        }
+        // Cloudinary returns path in req.file.path, resources_type usually auto, but we can verify
+        res.json({
+            url: req.file.path,
+            type: req.file.mimetype.startsWith('video/') ? 'video' : 'image',
+            name: req.file.originalname
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');

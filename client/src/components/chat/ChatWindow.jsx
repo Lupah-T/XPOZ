@@ -16,10 +16,16 @@ const ChatWindow = ({ selectedUser, onBack }) => {
     const [hasMore, setHasMore] = useState(true);
     const [isTyping, setIsTyping] = useState(false);
 
+    // Advanced Features State
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [editingMessage, setEditingMessage] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+
     // Refs
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const typingTimeoutRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     // Fetch initial messages or load more
     const fetchMessages = async (before = null) => {
@@ -85,7 +91,6 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         if (!socket) return;
 
         const handleReceiveMessage = (message) => {
-            console.log('Received message:', message);
             // Only add if it belongs to current conversation
             if ((message.sender === selectedUser._id && message.recipient === user.id) ||
                 (message.sender === user.id && message.recipient === selectedUser._id)) {
@@ -101,7 +106,6 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         };
 
         const handleMessageSent = (message) => {
-            console.log('Message sent confirmed:', message);
             // Ensure it's for the current conversation
             if (message.recipient === selectedUser._id || message.sender === selectedUser._id) {
                 setMessages(prev => {
@@ -167,19 +171,45 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const handleSendMessage = (e) => {
+    const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim() || !socket) return;
+        if ((!newMessage.trim() && !editingMessage && !replyingTo) || !socket) return;
 
-        // Emit through socket
+        if (editingMessage) {
+            // Edit Message
+            try {
+                const res = await fetch(`${API_URL}/api/messages/${editingMessage._id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-auth-token': token
+                    },
+                    body: JSON.stringify({ content: newMessage })
+                });
+
+                if (res.ok) {
+                    const updatedMsg = await res.json();
+                    setMessages(prev => prev.map(m => m._id === updatedMsg._id ? updatedMsg : m));
+                    setEditingMessage(null);
+                    setNewMessage('');
+                }
+            } catch (err) {
+                console.error('Edit error:', err);
+            }
+            return;
+        }
+
+        // New Message
         socket.emit('private-message', {
             senderId: user.id,
             recipientId: selectedUser._id,
-            content: newMessage
+            content: newMessage,
+            replyTo: replyingTo ? replyingTo._id : null
         });
 
         // Clear input
         setNewMessage('');
+        setReplyingTo(null);
     };
 
     const handleInput = (e) => {
@@ -194,6 +224,82 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         typingTimeoutRef.current = setTimeout(() => {
             socket.emit('typing-stop', { to: selectedUser._id, from: user.id });
         }, 1000);
+    };
+
+    // Actions
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch(`${API_URL}/api/messages/upload`, {
+                method: 'POST',
+                headers: { 'x-auth-token': token },
+                body: formData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                // Send message with attachment immediately
+                socket.emit('private-message', {
+                    senderId: user.id,
+                    recipientId: selectedUser._id,
+                    content: '', // Can be empty if just media
+                    attachments: [{ url: data.url, type: data.type, name: data.name }],
+                    replyTo: replyingTo ? replyingTo._id : null
+                });
+                setReplyingTo(null);
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            alert('Failed to upload media');
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const onReply = (msg) => {
+        setReplyingTo(msg);
+        setEditingMessage(null);
+        // Focus input
+        document.getElementById('chat-input')?.focus();
+    };
+
+    const onEdit = (msg) => {
+        setEditingMessage(msg);
+        setNewMessage(msg.content);
+        setReplyingTo(null);
+        document.getElementById('chat-input')?.focus();
+    };
+
+    const onDelete = async (msgId, mode = 'self') => {
+        if (!window.confirm(`Delete for ${mode === 'everyone' ? 'everyone' : 'me'}?`)) return;
+
+        try {
+            const res = await fetch(`${API_URL}/api/messages/${msgId}?mode=${mode}`, {
+                method: 'DELETE',
+                headers: { 'x-auth-token': token }
+            });
+
+            if (res.ok) {
+                // If everyone, server updates content. Local update needs to happen
+                // Ideally socket emits 'message-updated' or 'message-deleted', but for now manual local update
+                if (mode === 'everyone') {
+                    const data = await res.json();
+                    setMessages(prev => prev.map(m => m._id === msgId ? data.updatedMessage : m));
+                } else {
+                    // Self delete: remove from view locally
+                    setMessages(prev => prev.filter(m => m._id !== msgId));
+                }
+            }
+        } catch (err) {
+            console.error('Delete error:', err);
+        }
     };
 
     return (
@@ -281,6 +387,9 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                                     message={msg}
                                     isOwn={msg.sender === user.id}
                                     previousMessage={index > 0 ? messages[index - 1] : null}
+                                    onReply={onReply}
+                                    onEdit={onEdit}
+                                    onDelete={onDelete}
                                 />
                             ))}
                             <div ref={messagesEndRef} />
@@ -295,15 +404,45 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                 // Transparent bg to show floating effect
                 background: 'transparent',
                 display: 'flex',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                flexDirection: 'column',
+                alignItems: 'center'
             }}>
+                {/* Reply/Edit Preview */}
+                {(replyingTo || editingMessage) && (
+                    <div style={{
+                        width: '100%', maxWidth: '800px',
+                        background: '#1e293b', padding: '8px 16px',
+                        borderRadius: '12px 12px 0 0',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        marginBottom: '-12px', zIndex: 1, border: '1px solid #334155'
+                    }}>
+                        <div style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+                            {editingMessage ? (
+                                <span>Edit message</span>
+                            ) : (
+                                <span>Replying to <strong>{replyingTo.sender === user.id ? 'yourself' : 'recipient'}</strong></span>
+                            )}
+                            <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
+                                {editingMessage ? editingMessage.content : replyingTo.content || 'Media'}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => { setReplyingTo(null); setEditingMessage(null); setNewMessage(''); }}
+                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}
+                        >
+                            ×
+                        </button>
+                    </div>
+                )}
+
                 <form
                     onSubmit={handleSendMessage}
                     style={{
                         width: '100%',
                         maxWidth: '800px', // Constrain width like the example
                         background: '#334155', // Lighter gray than bg
-                        borderRadius: '24px',
+                        borderRadius: replyingTo || editingMessage ? '0 0 24px 24px' : '24px',
                         padding: '12px 16px',
                         display: 'flex',
                         alignItems: 'center',
@@ -312,11 +451,32 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         border: '1px solid #475569'
                     }}
                 >
+                    {/* Media Upload Button */}
                     <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleFileUpload}
+                        accept="image/*,video/*"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        style={{
+                            background: 'none', border: 'none', color: '#94a3b8',
+                            fontSize: '1.2rem', cursor: 'pointer', padding: '0 4px'
+                        }}
+                    >
+                        {isUploading ? '...' : '📎'}
+                    </button>
+
+                    <input
+                        id="chat-input"
                         type="text"
                         value={newMessage}
                         onChange={handleInput}
-                        placeholder={`Message ${selectedUser.pseudoName}...`}
+                        placeholder={editingMessage ? "Edit message..." : `Message ${selectedUser.pseudoName}...`}
                         style={{
                             flex: 1,
                             background: 'transparent',
@@ -329,7 +489,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                     />
                     <button
                         type="submit"
-                        disabled={!newMessage.trim()}
+                        disabled={!newMessage.trim() && !editingMessage}
                         style={{
                             width: '32px',
                             height: '32px',
@@ -344,7 +504,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                             transition: 'all 0.2s'
                         }}
                     >
-                        <span style={{ fontSize: '1.2rem', marginTop: '-2px' }}>↑</span>
+                        {editingMessage ? '✓' : <span style={{ fontSize: '1.2rem', marginTop: '-2px' }}>↑</span>}
                     </button>
                 </form>
             </div>

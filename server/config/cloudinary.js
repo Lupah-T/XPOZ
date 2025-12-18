@@ -61,4 +61,27 @@ const avatarStorage = new CloudinaryStorage({
     }
 });
 
-module.exports = { cloudinary, postStorage, avatarStorage };
+// Storage for chat attachments
+const chatStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+        const isVideo = file.mimetype.startsWith('video/');
+        if (isVideo) {
+            return {
+                folder: 'xpoz/chat',
+                resource_type: 'video',
+                allowed_formats: ['mp4', 'mov', 'avi', 'webm'],
+                transformation: [{ width: 1280, crop: 'limit' }, { quality: 'auto:low' }]
+            };
+        }
+        return {
+            folder: 'xpoz/chat',
+            resource_type: 'image',
+            allowed_formats: ['jpg', 'png', 'webp', 'gif'],
+            format: 'webp',
+            transformation: [{ width: 1200, crop: 'limit' }, { quality: 'auto:low' }]
+        };
+    }
+});
+
+module.exports = { cloudinary, postStorage, avatarStorage, chatStorage };
