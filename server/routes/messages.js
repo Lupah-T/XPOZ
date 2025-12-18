@@ -225,17 +225,35 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
-// Upload chat media
+// Upload chat media and files
 router.post('/upload', [auth, upload.single('file')], async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ msg: 'No file uploaded' });
         }
-        // Cloudinary returns path in req.file.path, resources_type usually auto, but we can verify
+
+        // Determine file type based on MIME type
+        let fileType = 'file'; // Default
+        if (req.file.mimetype.startsWith('image/')) {
+            fileType = 'image';
+        } else if (req.file.mimetype.startsWith('video/')) {
+            fileType = 'video';
+        } else if (req.file.mimetype.startsWith('audio/')) {
+            fileType = 'audio';
+        } else if (req.file.mimetype === 'application/pdf') {
+            fileType = 'pdf';
+        } else if (req.file.mimetype.includes('document') || req.file.mimetype.includes('msword')) {
+            fileType = 'document';
+        } else if (req.file.mimetype.includes('spreadsheet') || req.file.mimetype.includes('excel')) {
+            fileType = 'spreadsheet';
+        }
+
         res.json({
             url: req.file.path,
-            type: req.file.mimetype.startsWith('video/') ? 'video' : 'image',
-            name: req.file.originalname
+            type: fileType,
+            name: req.file.originalname,
+            size: req.file.size,
+            mimeType: req.file.mimetype
         });
     } catch (err) {
         console.error(err);

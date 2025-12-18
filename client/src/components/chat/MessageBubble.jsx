@@ -66,26 +66,165 @@ const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDel
                 )}
 
                 {/* Attachments */}
-                {message.attachments && message.attachments.map((att, idx) => (
-                    <div key={idx} style={{ marginBottom: message.content ? '8px' : '0' }}>
-                        {att.type === 'image' || att.url.match(/\.(jpeg|jpg|gif|png|webp)$/) ? (
-                            <img
-                                src={att.url}
-                                alt="attachment"
-                                style={{ maxWidth: '100%', borderRadius: '8px', cursor: 'pointer' }}
-                                onClick={() => window.open(att.url, '_blank')}
-                            />
-                        ) : (
-                            <div style={{ position: 'relative' }}>
-                                <video
-                                    src={att.url}
-                                    controls
-                                    style={{ maxWidth: '100%', borderRadius: '8px' }}
-                                />
-                            </div>
-                        )}
-                    </div>
-                ))}
+                {message.attachments && message.attachments.map((att, idx) => {
+                    // Helper function to format file size
+                    const formatFileSize = (bytes) => {
+                        if (!bytes) return '';
+                        if (bytes < 1024) return bytes + ' B';
+                        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+                        return (bytes / 1048576).toFixed(1) + ' MB';
+                    };
+
+                    return (
+                        <div key={idx} style={{ marginBottom: message.content ? '8px' : '0' }}>
+                            {/* Images */}
+                            {att.type === 'image' && (
+                                <div style={{ position: 'relative' }}>
+                                    <img
+                                        src={att.url}
+                                        alt={att.name || 'attachment'}
+                                        style={{
+                                            maxWidth: '250px',
+                                            maxHeight: '250px',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            objectFit: 'cover'
+                                        }}
+                                        onClick={() => window.open(att.url, '_blank')}
+                                    />
+                                    <a
+                                        href={att.url}
+                                        download={att.name}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '8px',
+                                            right: '8px',
+                                            background: 'rgba(0,0,0,0.7)',
+                                            color: 'white',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            fontSize: '0.75rem',
+                                            textDecoration: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        ⬇
+                                    </a>
+                                </div>
+                            )}
+
+                            {/* Videos */}
+                            {att.type === 'video' && (
+                                <div style={{ position: 'relative' }}>
+                                    <video
+                                        src={att.url}
+                                        controls
+                                        style={{
+                                            maxWidth: '250px',
+                                            maxHeight: '250px',
+                                            borderRadius: '8px'
+                                        }}
+                                    />
+                                    <a
+                                        href={att.url}
+                                        download={att.name}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '8px',
+                                            right: '8px',
+                                            background: 'rgba(0,0,0,0.7)',
+                                            color: 'white',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            fontSize: '0.75rem',
+                                            textDecoration: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        ⬇
+                                    </a>
+                                </div>
+                            )}
+
+                            {/* Audio */}
+                            {att.type === 'audio' && (
+                                <div style={{
+                                    background: '#1e293b',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    minWidth: '250px'
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>🎵</span>
+                                        <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {att.name || 'Audio'}
+                                        </span>
+                                        <a
+                                            href={att.url}
+                                            download={att.name}
+                                            style={{ color: '#a855f7', textDecoration: 'none', fontSize: '0.9rem' }}
+                                        >
+                                            ⬇
+                                        </a>
+                                    </div>
+                                    <audio src={att.url} controls style={{ width: '100%' }} />
+                                </div>
+                            )}
+
+                            {/* Documents (PDF, DOC, XLS, etc.) */}
+                            {(att.type === 'pdf' || att.type === 'document' || att.type === 'spreadsheet' || att.type === 'file') && (
+                                <div style={{
+                                    background: '#1e293b',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    minWidth: '200px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px'
+                                }}>
+                                    <div style={{ fontSize: '2rem' }}>
+                                        {att.type === 'pdf' ? '📄' :
+                                            att.type === 'document' ? '📝' :
+                                                att.type === 'spreadsheet' ? '📊' : '📎'}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{
+                                            fontSize: '0.9rem',
+                                            color: '#f8fafc',
+                                            fontWeight: '500',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
+                                        }}>
+                                            {att.name || 'Document'}
+                                        </div>
+                                        {att.size && (
+                                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                                {formatFileSize(att.size)}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <a
+                                        href={att.url}
+                                        download={att.name}
+                                        style={{
+                                            background: '#a855f7',
+                                            color: 'white',
+                                            padding: '6px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '0.8rem',
+                                            textDecoration: 'none',
+                                            fontWeight: '500',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        Download
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
 
                 {/* Content */}
                 {message.content && (

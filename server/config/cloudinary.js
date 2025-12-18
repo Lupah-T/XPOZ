@@ -61,11 +61,14 @@ const avatarStorage = new CloudinaryStorage({
     }
 });
 
-// Storage for chat attachments
+// Storage for chat attachments - supports all file types
 const chatStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
         const isVideo = file.mimetype.startsWith('video/');
+        const isImage = file.mimetype.startsWith('image/');
+        const isAudio = file.mimetype.startsWith('audio/');
+
         if (isVideo) {
             return {
                 folder: 'xpoz/chat',
@@ -74,12 +77,22 @@ const chatStorage = new CloudinaryStorage({
                 transformation: [{ width: 1280, crop: 'limit' }, { quality: 'auto:low' }]
             };
         }
+
+        if (isImage) {
+            return {
+                folder: 'xpoz/chat',
+                resource_type: 'image',
+                allowed_formats: ['jpg', 'png', 'webp', 'gif'],
+                format: 'webp',
+                transformation: [{ width: 1200, crop: 'limit' }, { quality: 'auto:low' }]
+            };
+        }
+
+        // For audio, documents, and all other file types
         return {
             folder: 'xpoz/chat',
-            resource_type: 'image',
-            allowed_formats: ['jpg', 'png', 'webp', 'gif'],
-            format: 'webp',
-            transformation: [{ width: 1200, crop: 'limit' }, { quality: 'auto:low' }]
+            resource_type: 'raw', // Raw upload for non-media files
+            allowed_formats: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'mp3', 'wav', 'ogg', 'm4a', 'zip', 'rar']
         };
     }
 });
