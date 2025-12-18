@@ -9,27 +9,55 @@ cloudinary.config({
 });
 
 // Storage for post media (images and videos)
+// Optimized for Cloudinary free tier - aggressive compression to save storage
 const postStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
         const isVideo = file.mimetype.startsWith('video/');
+
+        if (isVideo) {
+            // Video compression settings
+            return {
+                folder: 'xpoz/posts',
+                resource_type: 'video',
+                allowed_formats: ['mp4', 'mov', 'avi', 'webm'],
+                // Compress videos: 720p max, lower bitrate, efficient codec
+                transformation: [
+                    { width: 1280, height: 720, crop: 'limit' },
+                    { quality: 'auto:low' },
+                    { video_codec: 'auto' }
+                ]
+            };
+        }
+
+        // Image compression settings
         return {
             folder: 'xpoz/posts',
-            resource_type: isVideo ? 'video' : 'image',
-            allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi', 'webm'],
-            transformation: isVideo ? [] : [{ quality: 'auto' }]
+            resource_type: 'image',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            format: 'webp', // Convert all images to WebP (60-80% smaller than JPEG)
+            // Aggressive compression: limit width to 1200px, use low quality auto
+            transformation: [
+                { width: 1200, crop: 'limit' }, // Max 1200px wide, maintain aspect ratio
+                { quality: 'auto:low' }, // Aggressive quality optimization
+                { fetch_format: 'auto' } // Serve best format for browser
+            ]
         };
     }
 });
 
-// Storage for avatars
+// Storage for avatars - small, heavily compressed
 const avatarStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'xpoz/avatars',
         resource_type: 'image',
         allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-        transformation: [{ width: 200, height: 200, crop: 'fill' }]
+        format: 'webp', // Convert to WebP for smaller size
+        transformation: [
+            { width: 200, height: 200, crop: 'fill', gravity: 'face' }, // Face-aware cropping
+            { quality: 'auto:low' } // Aggressive compression for avatars
+        ]
     }
 });
 

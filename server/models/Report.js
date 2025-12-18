@@ -49,7 +49,12 @@ const reportSchema = new mongoose.Schema({
     order: Number,
     metadata: {
       startTime: Number,
-      endTime: Number
+      endTime: Number,
+      // Music overlay (built-in library)
+      music: {
+        trackId: String,    // Reference to client-side track
+        volume: Number      // 0-1 balance vs video audio
+      }
     }
   }],
 

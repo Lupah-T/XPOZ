@@ -360,7 +360,8 @@ const ReportForm = () => {
                                                     borderRadius: '4px',
                                                     fontSize: '0.7rem'
                                                 }}>
-                                                    ✂️ {item.metadata.startTime}s - {item.metadata.endTime}s
+                                                    ✂️ {Math.round(item.metadata.startTime)}s - {Math.round(item.metadata.endTime)}s
+                                                    {item.metadata.music && ' 🎵'}
                                                 </div>
                                             )}
 
@@ -407,24 +408,22 @@ const ReportForm = () => {
                                                 gap: '0.5rem',
                                                 justifyContent: 'center'
                                             }}>
-                                                {item.type === 'image' && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleEditMedia(index)}
-                                                        style={{
-                                                            background: 'rgba(255,255,255,0.2)',
-                                                            border: 'none',
-                                                            padding: '0.4rem 0.75rem',
-                                                            borderRadius: '4px',
-                                                            color: 'white',
-                                                            fontSize: '0.75rem',
-                                                            cursor: 'pointer',
-                                                            backdropFilter: 'blur(4px)'
-                                                        }}
-                                                    >
-                                                        ✏️ Edit
-                                                    </button>
-                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleEditMedia(index)}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.2)',
+                                                        border: 'none',
+                                                        padding: '0.4rem 0.75rem',
+                                                        borderRadius: '4px',
+                                                        color: 'white',
+                                                        fontSize: '0.75rem',
+                                                        cursor: 'pointer',
+                                                        backdropFilter: 'blur(4px)'
+                                                    }}
+                                                >
+                                                    ✏️ Edit
+                                                </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveMedia(index)}
