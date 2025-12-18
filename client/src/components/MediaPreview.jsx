@@ -303,17 +303,27 @@ const ManualCropper = ({ imageSrc, onCropChange, filter = '' }) => {
 const VideoTrimmer = ({ file, onTimeChange, initialStart = 0, initialEnd = null }) => {
     const videoRef = useRef(null);
     const timelineRef = useRef(null);
+    const videoUrlRef = useRef(null);
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [trimRange, setTrimRange] = useState({ start: initialStart, end: initialEnd || 0 });
     const [thumbnails, setThumbnails] = useState([]);
     const [dragging, setDragging] = useState(null); // 'start', 'end', 'playhead'
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isGeneratingThumbs, setIsGeneratingThumbs] = useState(false);
 
-    const videoUrl = URL.createObjectURL(file);
+    // Create URL once and store in ref
+    if (!videoUrlRef.current) {
+        videoUrlRef.current = URL.createObjectURL(file);
+    }
+    const videoUrl = videoUrlRef.current;
 
     useEffect(() => {
-        return () => URL.revokeObjectURL(videoUrl);
+        return () => {
+            if (videoUrlRef.current) {
+                URL.revokeObjectURL(videoUrlRef.current);
+            }
+        };
     }, []);
 
     const handleLoadedMetadata = (e) => {
@@ -321,10 +331,20 @@ const VideoTrimmer = ({ file, onTimeChange, initialStart = 0, initialEnd = null 
         setDuration(dur);
         setTrimRange({ start: 0, end: dur });
         onTimeChange({ start: 0, end: dur });
-        generateThumbnails(e.target, dur);
+        // Generate thumbnails using a separate hidden video element
+        generateThumbnails(dur);
     };
 
-    const generateThumbnails = async (video, dur) => {
+    const generateThumbnails = async (dur) => {
+        if (isGeneratingThumbs) return;
+        setIsGeneratingThumbs(true);
+
+        // Create a separate video element for thumbnail extraction
+        const thumbVideo = document.createElement('video');
+        thumbVideo.src = videoUrl;
+        thumbVideo.muted = true;
+        thumbVideo.preload = 'metadata';
+
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const thumbCount = 8;
@@ -333,21 +353,35 @@ const VideoTrimmer = ({ file, onTimeChange, initialStart = 0, initialEnd = null 
         canvas.width = 80;
         canvas.height = 60;
 
-        for (let i = 0; i < thumbCount; i++) {
-            const time = (i / thumbCount) * dur;
-            video.currentTime = time;
-
-            await new Promise(resolve => {
-                video.onseeked = () => {
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    thumbs.push(canvas.toDataURL('image/jpeg', 0.5));
-                    resolve();
-                };
+        try {
+            // Wait for the video to be ready
+            await new Promise((resolve, reject) => {
+                thumbVideo.onloadedmetadata = resolve;
+                thumbVideo.onerror = reject;
             });
-        }
 
-        setThumbnails(thumbs);
-        video.currentTime = 0;
+            for (let i = 0; i < thumbCount; i++) {
+                const time = (i / thumbCount) * dur;
+                thumbVideo.currentTime = time;
+
+                await new Promise(resolve => {
+                    thumbVideo.onseeked = () => {
+                        ctx.drawImage(thumbVideo, 0, 0, canvas.width, canvas.height);
+                        thumbs.push(canvas.toDataURL('image/jpeg', 0.5));
+                        resolve();
+                    };
+                });
+            }
+
+            setThumbnails(thumbs);
+        } catch (err) {
+            console.error('Error generating thumbnails:', err);
+        } finally {
+            // Clean up the temporary video
+            thumbVideo.src = '';
+            thumbVideo.load();
+            setIsGeneratingThumbs(false);
+        }
     };
 
     const handleTimeUpdate = (e) => {
@@ -404,14 +438,25 @@ const VideoTrimmer = ({ file, onTimeChange, initialStart = 0, initialEnd = null 
         };
     }, [dragging, duration, trimRange]);
 
-    const togglePlay = () => {
+    const togglePlay = async () => {
+        const video = videoRef.current;
+        if (!video) return;
+
         if (isPlaying) {
-            videoRef.current.pause();
+            video.pause();
+            setIsPlaying(false);
         } else {
-            videoRef.current.currentTime = trimRange.start;
-            videoRef.current.play();
+            video.currentTime = trimRange.start;
+            try {
+                await video.play();
+                setIsPlaying(true);
+            } catch (err) {
+                // Ignore AbortError - happens when play is interrupted
+                if (err.name !== 'AbortError') {
+                    console.error('Video play error:', err);
+                }
+            }
         }
-        setIsPlaying(!isPlaying);
     };
 
     const formatTime = (seconds) => {
