@@ -41,6 +41,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/messages', require('./routes/messages'));
 
 app.get('/', (req, res) => {
     res.send('Anonymous Reporting API is running');
@@ -48,6 +49,7 @@ app.get('/', (req, res) => {
 
 // Socket.io for real-time chat
 const User = require('./models/User');
+const Message = require('./models/Message');
 const jwt = require('jsonwebtoken');
 
 // Track online users
@@ -81,6 +83,46 @@ io.on('connection', (socket) => {
         } catch (err) {
             console.error('Online status error:', err);
         }
+    });
+
+    // Join a personal room for private messaging
+    socket.on('join-room', (userId) => {
+        socket.join(userId);
+        console.log(`User ${userId} joined their personal room`);
+    });
+
+    // Send private message
+    socket.on('private-message', async (data) => {
+        try {
+            const { senderId, recipientId, content, attachments } = data;
+
+            // Save to database
+            const newMessage = new Message({
+                sender: senderId,
+                recipient: recipientId,
+                content,
+                attachments
+            });
+            const savedMessage = await newMessage.save();
+
+            // Emit to recipient's room
+            io.to(recipientId).emit('receive-message', savedMessage);
+
+            // Emit back to sender (confirm sent)
+            io.to(senderId).emit('message-sent', savedMessage);
+
+        } catch (err) {
+            console.error('Message error:', err);
+        }
+    });
+
+    // Typing indicators
+    socket.on('typing-start', ({ to, from }) => {
+        io.to(to).emit('typing-start', { from });
+    });
+
+    socket.on('typing-stop', ({ to, from }) => {
+        io.to(to).emit('typing-stop', { from });
     });
 
     // Disconnect

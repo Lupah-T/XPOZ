@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
@@ -17,6 +17,7 @@ const getMediaUrl = (url) => {
 
 const Profile = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const { user: currentUser, token } = useAuth();
     const [profileUser, setProfileUser] = useState(null);
     const [posts, setPosts] = useState([]);
@@ -142,19 +143,40 @@ const Profile = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
                             <h2 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 300 }}>{profileUser.pseudoName}</h2>
                             {currentUser && currentUser.id !== profileUser._id && (
-                                <button
-                                    className="btn"
-                                    onClick={handleFollowToggle}
-                                    style={{
-                                        padding: '0.4rem 1.2rem',
-                                        fontWeight: '600',
-                                        background: isFollowing ? 'transparent' : 'var(--primary-color)',
-                                        border: isFollowing ? '1px solid var(--text-secondary)' : 'none',
-                                        color: isFollowing ? 'var(--text-primary)' : 'white'
-                                    }}
-                                >
-                                    {isFollowing ? 'Following' : 'Follow'}
-                                </button>
+                                <>
+                                    <button
+                                        className="btn"
+                                        onClick={handleFollowToggle}
+                                        style={{
+                                            padding: '0.4rem 1.2rem',
+                                            fontWeight: '600',
+                                            background: isFollowing ? 'transparent' : 'var(--primary-color)',
+                                            border: isFollowing ? '1px solid var(--text-secondary)' : 'none',
+                                            color: isFollowing ? 'var(--text-primary)' : 'white'
+                                        }}
+                                    >
+                                        {isFollowing ? 'Following' : 'Follow'}
+                                    </button>
+                                    <button
+                                        className="btn"
+                                        onClick={() => navigate('/messages', {
+                                            state: {
+                                                userId: profileUser._id,
+                                                pseudoName: profileUser.pseudoName,
+                                                avatarUrl: profileUser.avatarUrl
+                                            }
+                                        })}
+                                        style={{
+                                            padding: '0.4rem 1.2rem',
+                                            fontWeight: '600',
+                                            background: 'transparent',
+                                            border: '1px solid var(--text-secondary)',
+                                            color: 'white'
+                                        }}
+                                    >
+                                        Message
+                                    </button>
+                                </>
                             )}
                             {currentUser && currentUser.id === profileUser._id && (
                                 <>
@@ -275,7 +297,7 @@ const Profile = () => {
                     </div>
                 </div>
 
-            </main>
+            </main >
 
         </>
     );
