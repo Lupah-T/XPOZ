@@ -68,7 +68,7 @@ const Messages = () => {
     };
 
     return (
-        <div style={{ maxHeight: '100vh', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        <div style={{ maxHeight: '100vh', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', paddingBottom: '60px' }}>
             <Header />
 
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden', maxWidth: '1200px', margin: '0 auto', width: '100%', position: 'relative' }}>

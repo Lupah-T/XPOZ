@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ConversationList = ({ conversations, selectedUser, onSelectUser, onlineUsers }) => {
+    const navigate = useNavigate();
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -27,8 +29,21 @@ const ConversationList = ({ conversations, selectedUser, onSelectUser, onlineUse
         }}>
             {conversations.length === 0 ? (
                 <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
-                    <p>No conversations yet.</p>
-                    <p style={{ fontSize: '0.9rem' }}>Go to Users page to start chatting!</p>
+                    <p style={{ marginBottom: '1rem' }}>No conversations yet.</p>
+                    <button
+                        onClick={() => navigate('/users')}
+                        style={{
+                            padding: '0.6rem 1.2rem',
+                            background: '#a855f7',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                        }}
+                    >
+                        Start a Chat
+                    </button>
                 </div>
             ) : (
                 conversations.map((conv) => {
