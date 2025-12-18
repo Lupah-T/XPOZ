@@ -28,6 +28,10 @@ const messageSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    delivered: {
+        type: Boolean,
+        default: false
+    },
     readAt: {
         type: Date
     },

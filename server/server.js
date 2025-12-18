@@ -96,12 +96,16 @@ io.on('connection', (socket) => {
         try {
             const { senderId, recipientId, content, attachments } = data;
 
+            // Check if recipient is online
+            const isDelivered = onlineUsers.has(recipientId);
+
             // Save to database
             const newMessage = new Message({
                 sender: senderId,
                 recipient: recipientId,
                 content,
-                attachments
+                attachments,
+                delivered: isDelivered // Set delivered based on online status
             });
             const savedMessage = await newMessage.save();
 
@@ -113,6 +117,22 @@ io.on('connection', (socket) => {
 
         } catch (err) {
             console.error('Message error:', err);
+        }
+    });
+
+    // Mark messages as read
+    socket.on('mark-read', async ({ senderId, recipientId }) => {
+        try {
+            // Update all unread messages from sender to recipient
+            await Message.updateMany(
+                { sender: senderId, recipient: recipientId, read: false },
+                { $set: { read: true, readAt: new Date(), delivered: true } }
+            );
+
+            // Notify the sender (the one who wrote the messages) that they are read
+            io.to(senderId).emit('messages-read', { recipientId });
+        } catch (err) {
+            console.error('Mark read error:', err);
         }
     });
 

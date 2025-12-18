@@ -39,8 +39,14 @@ const MessageBubble = ({ message, isOwn, previousMessage }) => {
                 }}>
                     {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     {isOwn && (
-                        <span>
-                            {message.read ? '✓✓' : '✓'}
+                        <span style={{ marginLeft: '4px', fontSize: '0.8rem' }}>
+                            {message.read ? (
+                                <span style={{ color: '#a855f7' }}>✓✓</span> // Purple double tick
+                            ) : message.delivered ? (
+                                <span style={{ color: '#94a3b8' }}>✓✓</span> // Grey double tick
+                            ) : (
+                                <span style={{ color: '#94a3b8' }}>✓</span> // Grey single tick
+                            )}
                         </span>
                     )}
                 </div>

@@ -121,18 +121,47 @@ const ChatWindow = ({ selectedUser, onBack }) => {
             if (from === selectedUser._id) setIsTyping(false);
         };
 
+        const handleMessagesRead = ({ recipientId }) => {
+            if (recipientId === selectedUser._id) {
+                setMessages(prev => prev.map(msg =>
+                    msg.sender === user.id ? { ...msg, read: true, delivered: true } : msg
+                ));
+            }
+        };
+
         socket.on('receive-message', handleReceiveMessage);
         socket.on('message-sent', handleMessageSent);
         socket.on('typing-start', handleTypingStart);
         socket.on('typing-stop', handleTypingStop);
+        socket.on('messages-read', handleMessagesRead);
 
         return () => {
             socket.off('receive-message', handleReceiveMessage);
             socket.off('message-sent', handleMessageSent);
             socket.off('typing-start', handleTypingStart);
             socket.off('typing-stop', handleTypingStop);
+            socket.off('messages-read', handleMessagesRead);
         };
     }, [socket, selectedUser, user.id]);
+
+    // Mark as read explicitly when messages load or window is active
+    useEffect(() => {
+        if (!socket || !selectedUser || !messages.length) return;
+
+        // Find unread messages from them
+        const unreadExists = messages.some(m => m.sender === selectedUser._id && !m.read);
+
+        if (unreadExists) {
+            socket.emit('mark-read', {
+                senderId: selectedUser._id,
+                recipientId: user.id
+            });
+            // Update local state optimistically
+            setMessages(prev => prev.map(msg =>
+                msg.sender === selectedUser._id ? { ...msg, read: true } : msg
+            ));
+        }
+    }, [messages, selectedUser, socket, user.id]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
