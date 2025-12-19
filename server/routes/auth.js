@@ -37,8 +37,18 @@ router.post('/register', async (req, res) => {
             hashedAnswer = await bcrypt.hash(securityAnswer.toLowerCase().trim(), salt);
         }
 
+        // Generate Handle
+        let handle = pseudoName.toLowerCase().replace(/\s+/g, '');
+        // Ensure handle is unique (simple check, if taken append random number)
+        // In a real app we might want more robust retry logic, but for now append 4 random digits if exists
+        const handleExists = await User.findOne({ handle });
+        if (handleExists) {
+            handle = `${handle}${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+
         const newUser = new User({
             pseudoName,
+            handle,
             password: hashedPassword,
             securityQuestion: securityQuestion || '',
             securityAnswer: hashedAnswer || ''
@@ -53,6 +63,7 @@ router.post('/register', async (req, res) => {
             user: {
                 id: savedUser._id,
                 pseudoName: savedUser.pseudoName,
+                handle: savedUser.handle,
                 role: savedUser.role,
                 avatarUrl: savedUser.avatarUrl,
                 followers: savedUser.followers,
@@ -93,7 +104,9 @@ router.post('/login', async (req, res) => {
             token,
             user: {
                 id: user._id,
+                id: user._id,
                 pseudoName: user.pseudoName,
+                handle: user.handle,
                 role: user.role,
                 avatarUrl: user.avatarUrl,
                 followers: user.followers,

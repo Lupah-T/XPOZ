@@ -206,7 +206,8 @@ const Profile = () => {
 
                         {/* Bio Section */}
                         <div>
-                            <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{profileUser.pseudoName}</div>
+                            <div style={{ fontWeight: '600', marginBottom: '0.2rem' }}>{profileUser.pseudoName}</div>
+                            <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '0.5rem' }}>@{profileUser.handle}</div>
                             {currentUser && currentUser.id === profileUser._id ? (
                                 editingBio ? (
                                     <div>

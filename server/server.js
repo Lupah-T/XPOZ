@@ -27,7 +27,30 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/anonymous_r
     //   useNewUrlParser: true,
     //   useUnifiedTopology: true,
 })
-    .then(() => console.log('MongoDB connected'))
+    .then(async () => {
+        console.log('MongoDB connected');
+
+        // Migration: Generate handles for existing users
+        try {
+            const usersWithoutHandle = await User.find({ handle: { $exists: false } });
+            if (usersWithoutHandle.length > 0) {
+                console.log(`Found ${usersWithoutHandle.length} users without handles. Migrating...`);
+                for (const user of usersWithoutHandle) {
+                    let handle = user.pseudoName.toLowerCase().replace(/\s+/g, '');
+                    // Basic collision handling
+                    const existing = await User.findOne({ handle });
+                    if (existing) {
+                        handle = `${handle}${Math.floor(1000 + Math.random() * 9000)}`;
+                    }
+                    user.handle = handle;
+                    await user.save();
+                }
+                console.log('Handles migrated successfully.');
+            }
+        } catch (err) {
+            console.error('Migration error:', err);
+        }
+    })
     .catch(err => console.error(err));
 
 // Routes

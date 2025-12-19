@@ -218,6 +218,7 @@ const Users = () => {
                                         }}>
                                             {targetUser.pseudoName}
                                         </h3>
+                                        {targetUser.handle && <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>@{targetUser.handle}</span>}
                                         {!targetUser.isOnline && targetUser.lastSeen && (
                                             <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
                                                 {new Date(targetUser.lastSeen).toLocaleDateString([], { month: 'short', day: 'numeric' })}
