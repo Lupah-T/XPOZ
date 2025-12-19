@@ -105,10 +105,20 @@ const ChatWindow = ({ selectedUser, onBack }) => {
             }
         };
 
-        const handleMessageSent = (message) => {
+        const handleMessageSent = (data) => {
+            // Check if data is object with message and tempId or just message (backward compatibility)
+            const message = data.message || data;
+            const tempId = data.tempId;
+
             // Ensure it's for the current conversation
             if (message.recipient === selectedUser._id || message.sender === selectedUser._id) {
                 setMessages(prev => {
+                    // If we have a tempId, find the temporary message and replace it
+                    if (tempId) {
+                        return prev.map(m => m._id === tempId ? message : m);
+                    }
+
+                    // Fallback: check exists by _id
                     const exists = prev.some(m => m._id === message._id);
                     if (exists) return prev;
                     return [...prev, message];
@@ -202,12 +212,31 @@ const ChatWindow = ({ selectedUser, onBack }) => {
             return;
         }
 
-        // New Message
+        // New Message Logic with Optimistic UI
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
+        const optimisticMessage = {
+            _id: tempId,
+            sender: user.id,
+            recipient: selectedUser._id,
+            content: newMessage,
+            createdAt: new Date().toISOString(),
+            read: false,
+            delivered: false,
+            status: 'sending', // Custom flag for UI if needed
+            replyTo: replyingTo ? replyingTo : null
+        };
+
+        // 1. Add to UI immediately
+        setMessages(prev => [...prev, optimisticMessage]);
+        scrollToBottom();
+
+        // 2. Emit to server
         socket.emit('private-message', {
             senderId: user.id,
             recipientId: selectedUser._id,
             content: newMessage,
-            replyTo: replyingTo ? replyingTo._id : null
+            replyTo: replyingTo ? replyingTo._id : null,
+            tempId // Send tempId to server
         });
 
         // Clear input

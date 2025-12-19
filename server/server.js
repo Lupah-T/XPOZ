@@ -94,7 +94,7 @@ io.on('connection', (socket) => {
     // Send private message
     socket.on('private-message', async (data) => {
         try {
-            const { senderId, recipientId, content, attachments } = data;
+            const { senderId, recipientId, content, attachments, tempId } = data; // Destructure tempId
 
             // Check if recipient is online
             const isDelivered = onlineUsers.has(recipientId);
@@ -112,8 +112,8 @@ io.on('connection', (socket) => {
             // Emit to recipient's room
             io.to(recipientId).emit('receive-message', savedMessage);
 
-            // Emit back to sender (confirm sent)
-            io.to(senderId).emit('message-sent', savedMessage);
+            // Emit back to sender (confirm sent) - include tempId
+            io.to(senderId).emit('message-sent', { message: savedMessage, tempId });
 
         } catch (err) {
             console.error('Message error:', err);
