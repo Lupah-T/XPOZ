@@ -98,13 +98,11 @@ const Messages = () => {
 
                 {/* Left Side: Conversation List */}
                 <div style={{
-                    width: '350px',
-                    borderRight: '1px solid var(--glass-border)',
-                    display: 'flex',
                     flexDirection: 'column',
-                    // Responsive hiding
+                    // Responsive hiding: show list only if no user selected or on wide screens
                     display: window.innerWidth < 768 && selectedUser ? 'none' : 'flex',
                     width: window.innerWidth < 768 ? '100%' : '350px',
+                    borderRight: '1px solid var(--glass-border)',
                     background: 'var(--glass-bg)'
                 }}>
                     <div style={{ padding: '1.5rem 1rem', borderBottom: '1px solid var(--glass-border)' }}>
@@ -127,9 +125,8 @@ const Messages = () => {
                 {/* Right Side: Chat Window */}
                 <div style={{
                     flex: 1,
-                    display: 'flex',
                     flexDirection: 'column',
-                    // Responsive hiding
+                    // Responsive hiding: show chat window only if user selected or on wide screens
                     display: window.innerWidth < 768 && !selectedUser ? 'none' : 'flex'
                 }}>
                     {selectedUser ? (
