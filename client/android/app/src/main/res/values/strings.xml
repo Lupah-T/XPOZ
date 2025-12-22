@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">XPOZ</string>
-    <string name="title_activity_main">XPOZ</string>
-    <string name="package_name">com.xpoz.app</string>
-    <string name="custom_url_scheme">com.xpoz.app</string>
-</resources>
