@@ -22,3 +22,7 @@ coverage/
 
 # OS files
 .DS_Store
+
+# Mobile App (Capacitor/Android)
+android/
+capacitor.config.json

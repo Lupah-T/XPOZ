@@ -4,10 +4,44 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <title>X-POZ | Social Experience</title>
+    <meta name="description" content="X-POZ - A modern, fast social platform for authentic sharing and community connection." />
+    <style>
+      #preloader {
+        position: fixed;
+        inset: 0;
+        background: #020617;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease;
+      }
+      .loader-rings {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(139, 92, 246, 0.1);
+        border-top-color: #8b5cf6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
+    <div id="preloader">
+      <div class="loader-rings"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      window.onload = () => {
+        const loader = document.getElementById('preloader');
+        if (loader) {
+          loader.style.opacity = '0';
+          setTimeout(() => loader.remove(), 500);
+        }
+      };
+    </script>
   </body>
 </html>

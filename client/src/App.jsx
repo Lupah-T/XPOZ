@@ -35,8 +35,19 @@ const AdminRoute = ({ children }) => {
 };
 
 const LoadingFallback = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-    Loading...
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    background: 'var(--bg-dark)',
+    gap: '1.5rem'
+  }}>
+    <div className="loader-rings" style={{ scale: '1.5' }}></div>
+    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500', letterSpacing: '0.1em' }}>
+      SYNCING X-POZ
+    </div>
   </div>
 );
 
