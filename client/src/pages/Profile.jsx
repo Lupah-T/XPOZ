@@ -3,17 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
-
-// Helper function to get the correct media URL
-const getMediaUrl = (url) => {
-    if (!url) return null;
-    // If URL is already absolute (starts with http:// or https://), use it directly
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
-    }
-    // Otherwise, prepend API_URL for relative paths
-    return `${API_URL}/${url}`;
-};
+import { getMediaUrl } from '../utils/media';
 
 const Profile = () => {
     const { id } = useParams();
