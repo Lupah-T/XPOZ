@@ -1,28 +1,58 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
+  /* Common Variables */
   --primary: #8b5cf6;
   --primary-glow: rgba(139, 92, 246, 0.5);
   --secondary: #10b981;
   --accent: #f43f5e;
+  --font-main: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Default (Dark) Theme Variables */
   --bg-dark: #020617;
+  --bg-main: #020617;
   --surface: #0f172a;
   --surface-hover: #1e293b;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --glass: rgba(15, 23, 42, 0.6);
   --glass-stroke: rgba(255, 255, 255, 0.08);
-  --font-main: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --glass-bg: rgba(2, 6, 23, 0.8);
+}
+
+.light-theme {
+  --bg-dark: #f8fafc;
+  --bg-main: #f8fafc;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-stroke: rgba(0, 0, 0, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme {
+  --bg-dark: #020617;
+  --bg-main: #020617;
+  --surface: #0f172a;
+  --surface-hover: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --glass: rgba(15, 23, 42, 0.6);
+  --glass-stroke: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(2, 6, 23, 0.8);
 }
 
 body {
   margin: 0;
   font-family: var(--font-main);
-  background-color: var(--bg-dark);
+  background-color: var(--bg-main);
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;

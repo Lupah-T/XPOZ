@@ -341,54 +341,67 @@ const ChatWindow = ({ selectedUser, onBack }) => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0f172a' }}>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            background: 'var(--bg-main)',
+            position: 'relative',
+            overflow: 'hidden'
+        }}>
             {/* Header */}
             <div style={{
-                padding: '1rem',
-                borderBottom: '1px solid #334155',
-                background: '#0f172a', // Darker header
+                padding: '0.75rem 1rem',
+                borderBottom: '1px solid var(--glass-stroke)',
+                background: 'var(--glass-bg)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1rem'
+                gap: '1rem',
+                zIndex: 10
             }}>
                 <button
                     onClick={onBack}
                     style={{
                         background: 'none',
                         border: 'none',
-                        color: '#f8fafc',
+                        color: 'var(--text-main)',
                         fontSize: '1.5rem',
                         cursor: 'pointer',
-                        display: window.innerWidth < 768 ? 'block' : 'none'
+                        display: window.innerWidth < 768 ? 'block' : 'none',
+                        padding: '0 0.5rem'
                     }}
                 >
                     ←
                 </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
                     <div style={{ position: 'relative' }}>
                         <img
-                            src={selectedUser.avatarUrl || 'https://via.placeholder.com/40'}
+                            src={getMediaUrl(selectedUser.avatarUrl) || 'https://via.placeholder.com/40'}
                             alt={selectedUser.pseudoName}
-                            style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }}
+                            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
                         />
                         {selectedUser.isOnline && (
                             <div style={{
                                 position: 'absolute',
-                                bottom: '0',
-                                right: '0',
-                                width: '12px',
-                                height: '12px',
+                                bottom: '2px',
+                                right: '2px',
+                                width: '10px',
+                                height: '10px',
                                 backgroundColor: '#22c55e',
                                 borderRadius: '50%',
-                                border: '2px solid #0f172a'
+                                border: '2px solid var(--glass-bg)'
                             }} />
                         )}
                     </div>
 
-                    <div>
-                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: '#f8fafc' }}>{selectedUser.pseudoName}</h3>
-                        <div style={{ fontSize: '0.8rem', color: isTyping ? '#a855f7' : '#94a3b8', height: '1.2em', transition: 'color 0.3s' }}>
+                    <div style={{ overflow: 'hidden' }}>
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '700', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {selectedUser.pseudoName}
+                        </h3>
+                        <div style={{ fontSize: '0.75rem', color: isTyping ? 'var(--primary)' : 'var(--text-muted)', height: '1.2em', transition: 'color 0.3s' }}>
                             {isTyping ? 'Typing...' : (
                                 selectedUser.isOnline ? 'Active now' : (
                                     selectedUser.lastSeen ? `Last seen ${new Date(selectedUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
@@ -397,9 +410,15 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         </div>
                     </div>
                 </div>
+
+                {/* Optional: Add video/audio call icons placeholder like WhatsApp */}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', opacity: 0.6 }}>📞</button>
+                    <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', opacity: 0.6 }}>📹</button>
+                </div>
             </div>
 
-            {/* Messages Area */}
+            {/* Messages Area - Internal Scroll */}
             <div
                 onScroll={handleScroll}
                 ref={messagesContainerRef}
@@ -409,14 +428,19 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                     padding: '1rem',
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center' // Center messages container
+                    alignItems: 'center',
+                    background: 'var(--bg-main)',
+                    WebkitOverflowScrolling: 'touch'
                 }}
             >
                 <div style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column' }}>
-                    {loadingMore && <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.8rem', padding: '1rem' }}>Loading older messages...</div>}
+                    {loadingMore && <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '1rem' }}>Loading older messages...</div>}
 
                     {loading ? (
-                        <div style={{ textAlign: 'center', marginTop: '20px', color: '#94a3b8' }}>Loading chat...</div>
+                        <div style={{ textAlign: 'center', marginTop: '40px', color: 'var(--text-muted)' }}>
+                            <div className="loader" style={{ margin: '0 auto 1rem' }}></div>
+                            Loading chat...
+                        </div>
                     ) : (
                         <>
                             {messages.map((msg, index) => (
@@ -436,38 +460,42 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                 </div>
             </div>
 
-            {/* Input Area */}
+            {/* Input Area - Fixed at bottom */}
             <div style={{
-                padding: '1rem',
-                // Transparent bg to show floating effect
-                background: 'transparent',
+                padding: '0.75rem 1rem',
+                background: 'var(--glass-bg)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderTop: '1px solid var(--glass-stroke)',
                 display: 'flex',
                 justifyContent: 'center',
                 flexDirection: 'column',
-                alignItems: 'center'
+                alignItems: 'center',
+                zIndex: 10
             }}>
                 {/* Reply/Edit Preview */}
                 {(replyingTo || editingMessage) && (
                     <div style={{
                         width: '100%', maxWidth: '800px',
-                        background: '#1e293b', padding: '8px 16px',
+                        background: 'var(--surface)', padding: '8px 16px',
                         borderRadius: '12px 12px 0 0',
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        marginBottom: '-12px', zIndex: 1, border: '1px solid #334155'
+                        marginBottom: '0', zIndex: 1, border: '1px solid var(--glass-stroke)',
+                        borderBottom: 'none'
                     }}>
-                        <div style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
                             {editingMessage ? (
-                                <span>Edit message</span>
+                                <strong>Edit message</strong>
                             ) : (
-                                <span>Replying to <strong>{replyingTo.sender === user.id ? 'yourself' : 'recipient'}</strong></span>
+                                <span>Replying to <strong>{replyingTo.sender === user.id ? 'yourself' : selectedUser.pseudoName}</strong></span>
                             )}
-                            <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
-                                {editingMessage ? editingMessage.content : replyingTo.content || 'Media'}
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
+                                {editingMessage ? editingMessage.content : replyingTo.content || 'Media file'}
                             </div>
                         </div>
                         <button
                             onClick={() => { setReplyingTo(null); setEditingMessage(null); setNewMessage(''); }}
-                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
                         >
                             ×
                         </button>
@@ -478,15 +506,15 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                     onSubmit={handleSendMessage}
                     style={{
                         width: '100%',
-                        maxWidth: '800px', // Constrain width like the example
-                        background: '#334155', // Lighter gray than bg
+                        maxWidth: '800px',
+                        background: 'var(--surface-hover)',
                         borderRadius: replyingTo || editingMessage ? '0 0 24px 24px' : '24px',
-                        padding: '12px 16px',
+                        padding: '8px 12px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                        border: '1px solid #475569'
+                        border: '1px solid var(--glass-stroke)',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
                     }}
                 >
                     {/* File Upload Button */}
@@ -502,11 +530,12 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
                         style={{
-                            background: 'none', border: 'none', color: '#94a3b8',
-                            fontSize: '1.2rem', cursor: 'pointer', padding: '0 4px'
+                            background: 'none', border: 'none', color: 'var(--text-muted)',
+                            fontSize: '1.3rem', cursor: 'pointer', padding: '0 4px',
+                            display: 'flex', alignItems: 'center'
                         }}
                     >
-                        {isUploading ? '...' : '📎'}
+                        {isUploading ? '⌛' : '📎'}
                     </button>
 
                     <input
@@ -514,38 +543,56 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         type="text"
                         value={newMessage}
                         onChange={handleInput}
-                        placeholder={editingMessage ? "Edit message..." : `Message ${selectedUser.pseudoName}...`}
+                        placeholder={editingMessage ? "Edit message..." : "Type a message..."}
                         style={{
                             flex: 1,
                             background: 'transparent',
                             border: 'none',
-                            color: 'white',
+                            color: 'var(--text-main)',
                             outline: 'none',
-                            fontSize: '1rem',
-                            padding: '4px 8px'
+                            fontSize: '0.95rem',
+                            padding: '8px 4px'
                         }}
                     />
+
                     <button
                         type="submit"
                         disabled={!newMessage.trim() && !editingMessage}
                         style={{
-                            width: '32px',
-                            height: '32px',
+                            width: '36px',
+                            height: '36px',
                             borderRadius: '50%',
                             border: 'none',
-                            background: newMessage.trim() ? '#f8fafc' : '#475569',
-                            color: newMessage.trim() ? 'black' : '#94a3b8',
+                            background: newMessage.trim() || editingMessage ? 'var(--primary)' : 'transparent',
+                            color: newMessage.trim() || editingMessage ? 'white' : 'var(--text-muted)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            cursor: newMessage.trim() ? 'pointer' : 'default',
-                            transition: 'all 0.2s'
+                            cursor: newMessage.trim() || editingMessage ? 'pointer' : 'default',
+                            transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                            transform: newMessage.trim() || editingMessage ? 'scale(1)' : 'scale(0.9)',
+                            fontSize: '1.2rem'
                         }}
                     >
-                        {editingMessage ? '✓' : <span style={{ fontSize: '1.2rem', marginTop: '-2px' }}>↑</span>}
+                        {editingMessage ? '✓' : '🚀'}
                     </button>
                 </form>
             </div>
+
+            <style>{`
+                .loader {
+                    width: 24px;
+                    height: 24px;
+                    border: 3px solid var(--glass-stroke);
+                    border-top: 3px solid var(--primary);
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
         </div>
     );
 };

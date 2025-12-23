@@ -91,43 +91,69 @@ const Messages = () => {
     };
 
     return (
-        <div style={{ maxHeight: '100vh', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', paddingBottom: '60px' }}>
+        <div style={{
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            background: 'var(--bg-main)'
+        }}>
             <Header />
 
-            <div style={{ flex: 1, display: 'flex', overflow: 'hidden', maxWidth: '1200px', margin: '0 auto', width: '100%', position: 'relative' }}>
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                overflow: 'hidden',
+                maxWidth: '1400px',
+                margin: '0 auto',
+                width: '100%',
+                position: 'relative'
+            }}>
 
                 {/* Left Side: Conversation List */}
                 <div style={{
                     flexDirection: 'column',
-                    // Responsive hiding: show list only if no user selected or on wide screens
                     display: window.innerWidth < 768 && selectedUser ? 'none' : 'flex',
-                    width: window.innerWidth < 768 ? '100%' : '350px',
-                    borderRight: '1px solid var(--glass-border)',
-                    background: 'var(--glass-bg)'
+                    width: window.innerWidth < 768 ? '100%' : '380px',
+                    borderRight: '1px solid var(--glass-stroke)',
+                    background: 'var(--surface)',
+                    transition: 'all 0.3s ease'
                 }}>
-                    <div style={{ padding: '1.5rem 1rem', borderBottom: '1px solid var(--glass-border)' }}>
-                        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Messages</h1>
+                    <div style={{
+                        padding: '1.5rem',
+                        borderBottom: '1px solid var(--glass-stroke)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800' }}>Messages</h1>
                     </div>
 
-                    {loading ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Loading conversations...</div>
-                    ) : (
-                        <ConversationList
-                            conversations={conversations}
-                            selectedUser={selectedUser}
-                            onSelectUser={handleSelectUser}
-                            onlineUsers={onlineUsers}
-                            onDeleteConversation={handleDeleteConversation}
-                        />
-                    )}
+                    <div style={{ flex: 1, overflowY: 'auto' }}>
+                        {loading ? (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <div className="loader" style={{ margin: '0 auto 1rem' }}></div>
+                                Loading conversations...
+                            </div>
+                        ) : (
+                            <ConversationList
+                                conversations={conversations}
+                                selectedUser={selectedUser}
+                                onSelectUser={handleSelectUser}
+                                onlineUsers={onlineUsers}
+                                onDeleteConversation={handleDeleteConversation}
+                            />
+                        )}
+                    </div>
                 </div>
 
                 {/* Right Side: Chat Window */}
                 <div style={{
                     flex: 1,
+                    display: window.innerWidth < 768 && !selectedUser ? 'none' : 'flex',
                     flexDirection: 'column',
-                    // Responsive hiding: show chat window only if user selected or on wide screens
-                    display: window.innerWidth < 768 && !selectedUser ? 'none' : 'flex'
+                    background: 'var(--bg-main)',
+                    position: 'relative'
                 }}>
                     {selectedUser ? (
                         <ChatWindow
@@ -141,15 +167,31 @@ const Messages = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#64748b',
-                            background: 'rgba(0,0,0,0.2)'
+                            color: 'var(--text-muted)',
+                            background: 'var(--surface)',
                         }}>
-                            <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.5 }}>💬</div>
-                            <p style={{ fontSize: '1.2rem' }}>Select a conversation to start messaging</p>
+                            <div style={{ fontSize: '5rem', marginBottom: '1.5rem', opacity: 0.2 }}>💬</div>
+                            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)' }}>Your Messages</h2>
+                            <p style={{ fontSize: '1rem', marginTop: '0.5rem', opacity: 0.8 }}>Select a conversation to start chatting</p>
                         </div>
                     )}
                 </div>
             </div>
+
+            <style>{`
+                .loader {
+                    width: 24px;
+                    height: 24px;
+                    border: 3px solid var(--glass-stroke);
+                    border-top: 3px solid var(--primary);
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
         </div>
     );
 };

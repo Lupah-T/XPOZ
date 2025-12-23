@@ -9,22 +9,30 @@ const Home = () => {
     const [lightboxMedia, setLightboxMedia] = useState(null); // { url, type }
     const { user, token } = useAuth();
 
-    const fetchReports = async () => {
+    const [followedUsers, setFollowedUsers] = useState([]);
+
+    const fetchFollowedUsers = async () => {
+        if (!token) return;
         try {
-            const res = await fetch(`${API_URL}/api/reports`);
-            const data = await res.json();
-            setReports(data);
+            const res = await fetch(`${API_URL}/api/users/following`, {
+                headers: { 'x-auth-token': token }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setFollowedUsers(data);
+            }
         } catch (err) {
-            console.error("Failed to fetch reports", err);
+            console.error("Failed to fetch followed users", err);
         }
     };
 
     useEffect(() => {
         fetchReports();
+        fetchFollowedUsers();
         // Poll for new reports every 5 seconds for live feel
         const interval = setInterval(fetchReports, 5000);
         return () => clearInterval(interval);
-    }, []);
+    }, [token]);
 
     const handleFollow = async (authorId) => {
         if (!token) return;
@@ -37,6 +45,7 @@ const Home = () => {
             });
             const data = await res.json();
             alert(data.message); // Simple feedback for now
+            fetchFollowedUsers(); // Refresh bubbles
         } catch (err) {
             alert('Error following user');
         }
@@ -96,9 +105,6 @@ const Home = () => {
     const getMediaUrl = (path) => {
         if (!path) return '';
         if (path.startsWith('http')) return path;
-        // removing leading slash if present to avoid double slashes with API_URL which usually lacks trailing slash, 
-        // or ensure join is clean. 
-        // Assuming API_URL has no trailing slash.
         const cleanPath = path.startsWith('/') ? path.substring(1) : path;
         return `${API_URL}/${cleanPath}`;
     };
@@ -140,7 +146,6 @@ const Home = () => {
                 if (isAdminMod) {
                     const data = await res.json();
                     setReports(reports.map(r => r._id === reportId ? { ...r, status: 'moderated', moderationReason: data.report?.moderationReason || reason } : r));
-                    // alert('Post moderated successfully'); // Optional: user saw the update
                 } else {
                     setReports(reports.filter(r => r._id !== reportId));
                     alert('Post deleted successfully');
@@ -160,19 +165,82 @@ const Home = () => {
             <Header />
             <main className="container" style={{ flex: 1, paddingBottom: '3rem', maxWidth: '600px', margin: '0 auto' }}>
 
-                {/* Stories / Groups Quick Access (Horizontal Scroll) */}
-                <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)' }}>
-                    {/* Mock Story Circles */}
-                    {['#Vigilantes', '#Nature', '#Traffic', '#Corruption'].map((tag, i) => (
-                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', minWidth: '70px', cursor: 'pointer' }}>
-                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(45deg, #eab308, #ef4444)', padding: '2px' }}>
-                                <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                                    {['🛡️', '🌿', '🚗', '💰'][i]}
-                                </div>
-                            </div>
-                            <span style={{ fontSize: '0.75rem' }}>{tag}</span>
+                {/* Following Bubbles (Instagram style) */}
+                <div style={{
+                    display: 'flex',
+                    gap: '1.25rem',
+                    overflowX: 'auto',
+                    padding: '1rem 0.5rem',
+                    marginBottom: '1.5rem',
+                    borderBottom: '1px solid var(--glass-stroke)',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                }}>
+                    {followedUsers.length === 0 ? (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '0.5rem' }}>
+                            Follow users to see them here!
                         </div>
-                    ))}
+                    ) : (
+                        followedUsers.map((followedUser) => (
+                            <div
+                                key={followedUser._id}
+                                onClick={() => navigate(`/profile/${followedUser._id}`)}
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    minWidth: '70px',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            >
+                                <div style={{
+                                    width: '64px',
+                                    height: '64px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                                    padding: '2px',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}>
+                                    <div style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        borderRadius: '50%',
+                                        background: 'var(--surface)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
+                                        border: '2px solid var(--surface)'
+                                    }}>
+                                        {followedUser.avatarUrl ? (
+                                            <img
+                                                src={getMediaUrl(followedUser.avatarUrl)}
+                                                alt={followedUser.pseudoName}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                        ) : (
+                                            <div style={{ fontSize: '1.5rem' }}>👤</div>
+                                        )}
+                                    </div>
+                                </div>
+                                <span style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: '500',
+                                    color: 'var(--text-main)',
+                                    maxWidth: '70px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}>
+                                    {followedUser.pseudoName}
+                                </span>
+                            </div>
+                        ))
+                    )}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>

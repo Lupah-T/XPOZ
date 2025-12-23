@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 
@@ -12,9 +12,44 @@ const getMediaUrl = (url) => {
 
 const Header = () => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
     const [showAnnouncements, setShowAnnouncements] = React.useState(false);
     const [AnnouncementModal, setAnnouncementModal] = React.useState(null);
     const [hasNewAnnouncements, setHasNewAnnouncements] = React.useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'default');
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+        // Appy theme
+        const root = document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark-theme');
+            root.classList.remove('light-theme');
+        } else if (theme === 'light') {
+            root.classList.add('light-theme');
+            root.classList.remove('dark-theme');
+        } else {
+            root.classList.remove('dark-theme');
+            root.classList.remove('light-theme');
+            // Check system preference
+            if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+                // Technically the default is dark based on index.css, so we only add light if system is light
+                // But simpler: just let default be default (dark)
+            }
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setShowMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     React.useEffect(() => {
         // Check for new announcements
@@ -27,8 +62,6 @@ const Header = () => {
                     if (data.length > lastCount) {
                         setHasNewAnnouncements(true);
                     }
-                    // We update the count ONLY when user opens the modal ideally, 
-                    // but for simplicity, we treat "unseen count" as data.length > stored.
                 }
             } catch (err) {
                 console.error(err);
@@ -40,11 +73,6 @@ const Header = () => {
     const handleOpenAnnouncements = () => {
         setShowAnnouncements(true);
         setHasNewAnnouncements(false);
-        // Update local storage to current count (we need to fetch or know count)
-        // Re-fetching or just clearing badge. 
-        // Better: Fetch again inside modal, but here we just clear badge.
-        // We really need the count to save it. Let's assume user sees all.
-        // Actually, let's fetch count again to save it.
         fetch(`${API_URL}/api/announcements`)
             .then(res => res.json())
             .then(data => {
@@ -52,7 +80,7 @@ const Header = () => {
             });
     };
 
-    // Lazy load modal to avoid circular dependency or simple performance
+    // Lazy load modal
     React.useEffect(() => {
         if (showAnnouncements && !AnnouncementModal) {
             import('./AnnouncementModal').then(module => {
@@ -61,16 +89,32 @@ const Header = () => {
         }
     }, [showAnnouncements, AnnouncementModal]);
 
+    const navIconStyle = {
+        fontSize: '1.4rem',
+        textDecoration: 'none',
+        color: 'var(--text-main)',
+        cursor: 'pointer',
+        padding: '0.5rem',
+        borderRadius: '50%',
+        transition: 'background 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'none',
+        border: 'none'
+    };
+
     return (
         <>
             <header style={{
                 position: 'sticky',
                 top: 0,
-                zIndex: 999,
+                zIndex: 1000,
                 background: 'var(--glass-bg)',
-                backdropFilter: 'blur(10px)',
-                borderBottom: '1px solid var(--glass-border)',
-                padding: '0.75rem 1rem'
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                borderBottom: '1px solid var(--glass-stroke)',
+                padding: '0.6rem 1rem'
             }}>
                 <div style={{
                     display: 'flex',
@@ -80,10 +124,10 @@ const Header = () => {
                     margin: '0 auto'
                 }}>
                     <Link to="/" style={{
-                        fontSize: '1.25rem',
-                        fontWeight: 'bold',
+                        fontSize: '1.5rem',
+                        fontWeight: '800',
                         letterSpacing: '-0.05em',
-                        background: 'linear-gradient(45deg, #a855f7, #ec4899)',
+                        background: 'linear-gradient(135deg, #a855f7, #ec4899)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         textDecoration: 'none'
@@ -91,75 +135,170 @@ const Header = () => {
                         X-POZ
                     </Link>
 
-                    {/* Desktop Navigation - Hidden on mobile */}
+                    {/* Horizontal Navigation Icons */}
                     <div style={{
                         display: 'flex',
-                        gap: '1.5rem',
+                        gap: '0.5rem',
                         alignItems: 'center'
-                    }} className="desktop-nav">
-                        <Link to="/" className="nav-icon" title="Home">🏠</Link>
-                        <Link to="/users" className="nav-icon" title="Users">👥</Link>
-                        <Link to="/messages" className="nav-icon" title="Messages">💬</Link>
-                        <Link to="/create" className="nav-icon" title="New Post">➕</Link>
-                        {user && user.role === 'admin' && (
-                            <Link to="/admin/dashboard" className="nav-icon" title="Admin Dashboard">🛡️</Link>
-                        )}
+                    }}>
+                        <Link to="/" style={navIconStyle} title="Home">🏠</Link>
+                        <Link to="/users" style={navIconStyle} title="Users">👥</Link>
+                        <Link to="/messages" style={navIconStyle} title="Messages">💬</Link>
+                        <Link to="/create" style={navIconStyle} title="New Post">➕</Link>
                         <button
                             onClick={handleOpenAnnouncements}
-                            className="nav-icon"
+                            style={{ ...navIconStyle, position: 'relative' }}
                             title="Announcements"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', position: 'relative' }}
                         >
                             📢
                             {hasNewAnnouncements && (
                                 <span style={{
                                     position: 'absolute',
-                                    top: '-2px',
-                                    right: '-2px',
-                                    width: '10px',
-                                    height: '10px',
+                                    top: '4px',
+                                    right: '4px',
+                                    width: '8px',
+                                    height: '8px',
                                     background: '#ef4444',
                                     borderRadius: '50%',
-                                    border: '2px solid white'
+                                    border: '1.5px solid var(--glass-bg)'
                                 }}></span>
                             )}
                         </button>
-                        <Link to={user ? `/profile/${user.id}` : '/auth'} className="nav-icon" title="Profile">
-                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#cbd5e1', overflow: 'hidden' }}>
-                                {user?.avatarUrl && <img src={getMediaUrl(user.avatarUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                            </div>
-                        </Link>
-                        {user && (
-                            <button
-                                onClick={logout}
-                                className="nav-icon"
-                                title="Logout"
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: '#ef4444' }}
-                            >
-                                🚪
-                            </button>
-                        )}
-                    </div>
 
-                    {/* Mobile - Just show create button */}
-                    <Link to="/create" className="mobile-only" style={{
-                        background: '#a855f7',
-                        color: 'white',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '20px',
-                        textDecoration: 'none',
-                        fontSize: '0.9rem',
-                        fontWeight: '600'
-                    }}>
-                        Create
-                    </Link>
+                        {/* 3-dot Menu */}
+                        <div style={{ position: 'relative' }} ref={menuRef}>
+                            <button
+                                onClick={() => setShowMenu(!showMenu)}
+                                style={navIconStyle}
+                                title="Menu"
+                            >
+                                ⋯
+                            </button>
+
+                            {showMenu && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '0.5rem',
+                                    background: 'var(--surface)',
+                                    border: '1px solid var(--glass-stroke)',
+                                    borderRadius: '12px',
+                                    minWidth: '180px',
+                                    boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                                    zIndex: 1001,
+                                    padding: '0.5rem 0'
+                                }}>
+                                    {user && (
+                                        <>
+                                            <div style={{
+                                                padding: '0.75rem 1rem',
+                                                borderBottom: '1px solid var(--glass-stroke)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.75rem',
+                                                marginBottom: '0.25rem'
+                                            }}>
+                                                <img
+                                                    src={getMediaUrl(user.avatarUrl) || 'https://via.placeholder.com/32'}
+                                                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                                                    alt=""
+                                                />
+                                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)' }}>
+                                                    {user.pseudoName}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => { navigate(`/profile/${user.id}`); setShowMenu(false); }}
+                                                className="menu-item"
+                                            >
+                                                👤 View Profile
+                                            </button>
+                                            {user.role === 'admin' && (
+                                                <button
+                                                    onClick={() => { navigate('/admin/dashboard'); setShowMenu(false); }}
+                                                    className="menu-item"
+                                                >
+                                                    🛡️ Admin Portal
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {/* Theme Selector */}
+                                    <div style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>THEME</div>
+                                    <div style={{ display: 'flex', padding: '0.25rem 0.5rem', gap: '0.25rem' }}>
+                                        {['Default', 'Light', 'Dark'].map((t) => (
+                                            <button
+                                                key={t}
+                                                onClick={() => setTheme(t.toLowerCase())}
+                                                style={{
+                                                    flex: 1,
+                                                    fontSize: '0.75rem',
+                                                    padding: '0.4rem',
+                                                    borderRadius: '6px',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    background: theme === t.toLowerCase() ? 'var(--primary)' : 'var(--surface-hover)',
+                                                    color: theme === t.toLowerCase() ? 'white' : 'var(--text-main)',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                {t}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div style={{ borderTop: '1px solid var(--glass-stroke)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
+                                        {user ? (
+                                            <button
+                                                onClick={() => { logout(); setShowMenu(false); }}
+                                                className="menu-item"
+                                                style={{ color: '#ef4444' }}
+                                            >
+                                                🚪 Logout
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => { navigate('/auth'); setShowMenu(false); }}
+                                                className="menu-item"
+                                            >
+                                                🔑 Login / Register
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </header>
-            {
-                showAnnouncements && AnnouncementModal && (
-                    <AnnouncementModal onClose={() => setShowAnnouncements(false)} />
-                )
-            }
+
+            <style>{`
+                .menu-item {
+                    display: block;
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.75rem 1rem;
+                    background: none;
+                    border: none;
+                    color: var(--text-main);
+                    cursor: pointer;
+                    font-size: 0.95rem;
+                    font-family: inherit;
+                    transition: background 0.2s;
+                }
+                .menu-item:hover {
+                    background: var(--surface-hover);
+                }
+                .nav-icon:hover {
+                    background: var(--surface-hover) !important;
+                }
+            `}</style>
+
+            {showAnnouncements && AnnouncementModal && (
+                <AnnouncementModal onClose={() => setShowAnnouncements(false)} />
+            )}
         </>
     );
 };
