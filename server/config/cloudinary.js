@@ -2,6 +2,11 @@ const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 // Configure Cloudinary
+console.log('[Cloudinary] Initializing with:');
+console.log('  Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME || '❌ NOT SET');
+console.log('  API Key:', process.env.CLOUDINARY_API_KEY ? '✅ SET' : '❌ NOT SET');
+console.log('  API Secret:', process.env.CLOUDINARY_API_SECRET ? `✅ SET (${process.env.CLOUDINARY_API_SECRET.length} chars)` : '❌ NOT SET');
+
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -50,15 +55,17 @@ const postStorage = new CloudinaryStorage({
 // Storage for avatars - small, heavily compressed
 const avatarStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-        folder: 'xpoz/avatars',
-        resource_type: 'image',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-        format: 'webp', // Convert to WebP for smaller size
-        transformation: [
-            { width: 200, height: 200, crop: 'fill', gravity: 'face' }, // Face-aware cropping
-            { quality: 'auto:low' } // Aggressive compression for avatars
-        ]
+    params: async (req, file) => {
+        return {
+            folder: 'xpoz/avatars',
+            resource_type: 'image',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            format: 'webp',
+            transformation: [
+                { width: 200, height: 200, crop: 'fill', gravity: 'face' },
+                { quality: 'auto:low' }
+            ]
+        };
     }
 });
 
