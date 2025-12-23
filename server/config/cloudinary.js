@@ -13,6 +13,7 @@ cloudinary.config({
 const postStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
+        console.log('[Cloudinary] Processing post file:', file.originalname, file.mimetype);
         const isVideo = file.mimetype.startsWith('video/');
 
         if (isVideo) {

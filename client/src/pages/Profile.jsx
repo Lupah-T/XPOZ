@@ -83,6 +83,19 @@ const Profile = () => {
                 headers: { 'x-auth-token': token },
                 body: formData
             });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('[Profile] Avatar upload failed:', errorText);
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    alert(`Upload failed: ${errorJson.message}`);
+                } catch (e) {
+                    alert(`Upload failed: Server returned ${res.status}`);
+                }
+                return;
+            }
+
             const data = await res.json();
             setProfileUser({ ...profileUser, avatarUrl: data.avatarUrl });
             alert('Profile updated!');
@@ -178,11 +191,15 @@ const Profile = () => {
                                         onChange={handleAvatarChange}
                                     />
                                     <button
-                                        className="btn"
+                                        className="btn btn-primary"
                                         onClick={() => document.getElementById('avatarInput').click()}
-                                        style={{ background: 'transparent', border: '1px solid var(--text-secondary)' }}
+                                        style={{
+                                            padding: '0.5rem 1.25rem',
+                                            fontSize: '0.9rem',
+                                            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.4)'
+                                        }}
                                     >
-                                        Edit Profile
+                                        📸 Edit Profile
                                     </button>
                                 </>
                             )}
@@ -242,9 +259,16 @@ const Profile = () => {
                                         <button
                                             className="btn"
                                             onClick={() => setEditingBio(true)}
-                                            style={{ background: 'transparent', border: '1px solid var(--text-secondary)', padding: '0.3rem 0.8rem', fontSize: '0.85rem' }}
+                                            style={{
+                                                background: 'rgba(168, 85, 247, 0.2)',
+                                                border: '1px solid var(--primary)',
+                                                color: 'var(--primary)',
+                                                padding: '0.4rem 1rem',
+                                                fontSize: '0.85rem',
+                                                marginTop: '0.5rem'
+                                            }}
                                         >
-                                            Edit Bio
+                                            ✏️ Edit Bio
                                         </button>
                                     </div>
                                 )

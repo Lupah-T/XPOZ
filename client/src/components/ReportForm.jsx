@@ -126,8 +126,16 @@ const ReportForm = () => {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to create post');
+                const errorText = await response.text();
+                console.error('[ReportForm] Post creation failed:', errorText);
+                let errorMessage = 'Failed to create post';
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorMessage;
+                } catch (e) {
+                    errorMessage = `Server Error (${response.status})`;
+                }
+                throw new Error(errorMessage);
             }
 
             setStatus('success');
