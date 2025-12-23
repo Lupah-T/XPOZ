@@ -5,7 +5,7 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(sessionStorage.getItem('token'));
+    const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         console.log('[AuthContext] Login successful');
-        sessionStorage.setItem('token', data.token);
+        localStorage.setItem('token', data.token);
         setToken(data.token);
         setUser(data.user);
     };

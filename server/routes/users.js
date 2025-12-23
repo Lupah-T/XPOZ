@@ -3,6 +3,17 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 
+// Get users followed by current user
+router.get('/following', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).populate('following', 'pseudoName avatarUrl bio');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json(user.following);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Get all users (for discovery) - MUST BE BEFORE /:id route
 router.get('/all/users', auth, async (req, res) => {
     try {

@@ -3,6 +3,7 @@ import { API_URL } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import MessageBubble from './MessageBubble';
+import { getMediaUrl } from '../../utils/media';
 
 const ChatWindow = ({ selectedUser, onBack }) => {
     const { user, token } = useAuth();
@@ -32,7 +33,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         if (!selectedUser) return;
 
         try {
-            const url = `${API_URL}/api/messages/${selectedUser._id}?limit=20${before ? `&before=${before}` : ''}`;
+            const url = `${API_URL} /api/messages / ${selectedUser._id}?limit = 20${before ? `&before=${before}` : ''} `;
             const res = await fetch(url, {
                 headers: { 'x-auth-token': token }
             });
@@ -191,7 +192,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         if (editingMessage) {
             // Edit Message
             try {
-                const res = await fetch(`${API_URL}/api/messages/${editingMessage._id}`, {
+                const res = await fetch(`${API_URL} /api/messages / ${editingMessage._id} `, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -213,7 +214,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         }
 
         // New Message Logic with Optimistic UI
-        const tempId = `temp-${Date.now()}-${Math.random()}`;
+        const tempId = `temp - ${Date.now()} -${Math.random()} `;
         const optimisticMessage = {
             _id: tempId,
             sender: user.id,
@@ -268,7 +269,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         formData.append('file', file);
 
         try {
-            const res = await fetch(`${API_URL}/api/messages/upload`, {
+            const res = await fetch(`${API_URL} /api/messages / upload`, {
                 method: 'POST',
                 headers: { 'x-auth-token': token },
                 body: formData
@@ -319,7 +320,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         if (!window.confirm(`Delete for ${mode === 'everyone' ? 'everyone' : 'me'}?`)) return;
 
         try {
-            const res = await fetch(`${API_URL}/api/messages/${msgId}?mode=${mode}`, {
+            const res = await fetch(`${API_URL} /api/messages / ${msgId}?mode = ${mode} `, {
                 method: 'DELETE',
                 headers: { 'x-auth-token': token }
             });
@@ -404,7 +405,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         <div style={{ fontSize: '0.75rem', color: isTyping ? 'var(--primary)' : 'var(--text-muted)', height: '1.2em', transition: 'color 0.3s' }}>
                             {isTyping ? 'Typing...' : (
                                 selectedUser.isOnline ? 'Active now' : (
-                                    selectedUser.lastSeen ? `Last seen ${new Date(selectedUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''
+                                    selectedUser.lastSeen ? `Last seen ${new Date(selectedUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ` : ''
                                 )
                             )}
                         </div>
@@ -580,19 +581,19 @@ const ChatWindow = ({ selectedUser, onBack }) => {
             </div>
 
             <style>{`
-                .loader {
-                    width: 24px;
-                    height: 24px;
-                    border: 3px solid var(--glass-stroke);
-                    border-top: 3px solid var(--primary);
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `}</style>
+    .loader {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--glass - stroke);
+    border - top: 3px solid var(--primary);
+    border - radius: 50 %;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0 % { transform: rotate(0deg); }
+    100 % { transform: rotate(360deg); }
+}
+`}</style>
         </div>
     );
 };

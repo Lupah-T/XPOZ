@@ -52,15 +52,6 @@ const LoadingFallback = () => (
 );
 
 const App = () => {
-  const ShowBottomNav = () => {
-    const { token } = useAuth();
-    const shouldHide = window.location.pathname === '/auth' ||
-      window.location.pathname === '/admin/login' ||
-      window.location.pathname.startsWith('/admin/dashboard');
-
-    return token && !shouldHide ? <BottomNav /> : null;
-  };
-
   return (
     <ErrorBoundary>
       <Router>
@@ -121,7 +112,6 @@ const App = () => {
                 />
               </Routes>
             </Suspense>
-            <ShowBottomNav />
           </SocketProvider>
         </AuthProvider>
       </Router>
