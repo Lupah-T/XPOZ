@@ -74,13 +74,13 @@ export const AuthProvider = ({ children }) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
 
-        sessionStorage.setItem('token', data.token);
+        localStorage.setItem('token', data.token);
         setToken(data.token);
         setUser(data.user);
     };
 
     const logout = () => {
-        sessionStorage.removeItem('token');
+        localStorage.removeItem('token');
         setToken(null);
         setUser(null);
     };
