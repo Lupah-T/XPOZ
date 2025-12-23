@@ -20,7 +20,7 @@ export const SocketProvider = ({ children }) => {
     const notificationSound = new Audio('/notification.mp3');
 
     useEffect(() => {
-        if (Notification.permission === 'default') {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
             Notification.requestPermission();
         }
     }, []);
@@ -76,7 +76,7 @@ export const SocketProvider = ({ children }) => {
                 notificationSound.play().catch(e => console.log('Audio play failed', e));
 
                 // Show notification if hidden
-                if (document.hidden && Notification.permission === 'granted') {
+                if (document.hidden && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                     new Notification('New Message', {
                         body: message.content || 'Sent a media file',
                         icon: '/vite.svg'
