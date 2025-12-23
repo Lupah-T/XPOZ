@@ -168,6 +168,29 @@ io.on('connection', (socket) => {
         io.to(to).emit('typing-stop', { from });
     });
 
+    // WebRTC Signaling for Calls
+    socket.on('call-user', ({ to, from, signal, type }) => {
+        console.log(`Call from ${from} to ${to} (${type})`);
+        io.to(to).emit('incoming-call', { from, signal, type });
+    });
+
+    socket.on('answer-call', ({ to, signal }) => {
+        console.log(`Call answered by ${socket.userId}, sending to ${to}`);
+        io.to(to).emit('call-accepted', { signal });
+    });
+
+    socket.on('ice-candidate', ({ to, candidate }) => {
+        io.to(to).emit('ice-candidate', { candidate });
+    });
+
+    socket.on('reject-call', ({ to }) => {
+        io.to(to).emit('call-rejected');
+    });
+
+    socket.on('end-call', ({ to }) => {
+        io.to(to).emit('call-ended');
+    });
+
     // Disconnect
     socket.on('disconnect', async () => {
         console.log('User disconnected:', socket.id);

@@ -7,7 +7,7 @@ import { getMediaUrl } from '../../utils/media';
 
 const ChatWindow = ({ selectedUser, onBack }) => {
     const { user, token } = useAuth();
-    const { socket, markLocalAsRead } = useSocket();
+    const { socket, markLocalAsRead, startCall } = useSocket();
 
     // State
     const [messages, setMessages] = useState([]);
@@ -413,9 +413,21 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                 </div>
 
                 {/* Optional: Add video/audio call icons placeholder like WhatsApp */}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', opacity: 0.6 }}>📞</button>
-                    <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', opacity: 0.6 }}>📹</button>
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                    <button
+                        onClick={() => startCall(selectedUser, 'voice')}
+                        style={{ background: 'rgba(139, 92, 246, 0.15)', border: 'none', width: '38px', height: '38px', borderRadius: '50%', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                        title="Voice Call"
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'}
+                    >📞</button>
+                    <button
+                        onClick={() => startCall(selectedUser, 'video')}
+                        style={{ background: 'rgba(139, 92, 246, 0.15)', border: 'none', width: '38px', height: '38px', borderRadius: '50%', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                        title="Video Call"
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'}
+                    >📹</button>
                 </div>
             </div>
 
@@ -461,42 +473,44 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                 </div>
             </div>
 
-            {/* Input Area - Fixed at bottom */}
             <div style={{
                 padding: '0.75rem 1rem',
+                paddingBottom: 'env(safe-area-inset-bottom, 0.75rem)', // Handle mobile safe areas
                 background: 'var(--glass-bg)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
                 borderTop: '1px solid var(--glass-stroke)',
                 display: 'flex',
                 justifyContent: 'center',
                 flexDirection: 'column',
                 alignItems: 'center',
-                zIndex: 10
+                zIndex: 10,
+                boxShadow: '0 -4px 12px rgba(0,0,0,0.1)'
             }}>
                 {/* Reply/Edit Preview */}
                 {(replyingTo || editingMessage) && (
                     <div style={{
                         width: '100%', maxWidth: '800px',
-                        background: 'var(--surface)', padding: '8px 16px',
-                        borderRadius: '12px 12px 0 0',
+                        background: 'var(--surface)', padding: '10px 16px',
+                        borderRadius: '16px 16px 0 0',
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         marginBottom: '0', zIndex: 1, border: '1px solid var(--glass-stroke)',
-                        borderBottom: 'none'
+                        borderBottom: 'none',
+                        animation: 'fadeInUp 0.3s ease'
                     }}>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', borderLeft: '3px solid var(--primary)', paddingLeft: '10px' }}>
                             {editingMessage ? (
-                                <strong>Edit message</strong>
+                                <strong style={{ color: 'var(--primary)' }}>Editing Message</strong>
                             ) : (
-                                <span>Replying to <strong>{replyingTo.sender === user.id ? 'yourself' : selectedUser.pseudoName}</strong></span>
+                                <span>Replying to <strong style={{ color: 'var(--primary)' }}>{replyingTo.sender === user.id ? 'yourself' : selectedUser.pseudoName}</strong></span>
                             )}
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
-                                {editingMessage ? editingMessage.content : replyingTo.content || 'Media file'}
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px', marginTop: '2px' }}>
+                                {editingMessage ? editingMessage.content : (replyingTo.content || 'Media file')}
                             </div>
                         </div>
                         <button
                             onClick={() => { setReplyingTo(null); setEditingMessage(null); setNewMessage(''); }}
-                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+                            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                             ×
                         </button>
@@ -509,13 +523,14 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         width: '100%',
                         maxWidth: '800px',
                         background: 'var(--surface-hover)',
-                        borderRadius: replyingTo || editingMessage ? '0 0 24px 24px' : '24px',
-                        padding: '8px 12px',
+                        borderRadius: replyingTo || editingMessage ? '0 0 20px 20px' : '20px',
+                        padding: '6px 10px',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
+                        alignItems: 'flex-end', // Align items to bottom for growing textarea
+                        gap: '10px',
                         border: '1px solid var(--glass-stroke)',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
+                        transition: 'all 0.3s ease'
                     }}
                 >
                     {/* File Upload Button */}
@@ -532,19 +547,33 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         disabled={isUploading}
                         style={{
                             background: 'none', border: 'none', color: 'var(--text-muted)',
-                            fontSize: '1.3rem', cursor: 'pointer', padding: '0 4px',
-                            display: 'flex', alignItems: 'center'
+                            fontSize: '1.4rem', cursor: 'pointer', padding: '8px 4px',
+                            display: 'flex', alignItems: 'center', transition: 'transform 0.2s'
                         }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                     >
                         {isUploading ? '⌛' : '📎'}
                     </button>
 
-                    <input
+                    <textarea
                         id="chat-input"
-                        type="text"
                         value={newMessage}
-                        onChange={handleInput}
+                        onChange={(e) => {
+                            handleInput(e);
+                            // Auto-expand
+                            e.target.style.height = 'auto';
+                            e.target.style.height = e.target.scrollHeight + 'px';
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage(e);
+                                e.target.style.height = 'auto';
+                            }
+                        }}
                         placeholder={editingMessage ? "Edit message..." : "Type a message..."}
+                        rows={1}
                         style={{
                             flex: 1,
                             background: 'transparent',
@@ -552,7 +581,12 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                             color: 'var(--text-main)',
                             outline: 'none',
                             fontSize: '0.95rem',
-                            padding: '8px 4px'
+                            padding: '10px 4px',
+                            resize: 'none',
+                            maxHeight: '150px',
+                            minHeight: '24px',
+                            lineHeight: '1.4',
+                            fontFamily: 'inherit'
                         }}
                     />
 
@@ -560,19 +594,20 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         type="submit"
                         disabled={!newMessage.trim() && !editingMessage}
                         style={{
-                            width: '36px',
-                            height: '36px',
+                            width: '40px',
+                            height: '40px',
                             borderRadius: '50%',
                             border: 'none',
-                            background: newMessage.trim() || editingMessage ? 'var(--primary)' : 'transparent',
+                            background: newMessage.trim() || editingMessage ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
                             color: newMessage.trim() || editingMessage ? 'white' : 'var(--text-muted)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             cursor: newMessage.trim() || editingMessage ? 'pointer' : 'default',
-                            transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                            transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                             transform: newMessage.trim() || editingMessage ? 'scale(1)' : 'scale(0.9)',
-                            fontSize: '1.2rem'
+                            fontSize: '1.2rem',
+                            marginBottom: '4px' // Align with text
                         }}
                     >
                         {editingMessage ? '✓' : '🚀'}
