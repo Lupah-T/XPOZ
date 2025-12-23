@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import VideoPlayer from '../components/VideoPlayer';
 import { useAuth } from '../context/AuthContext';
@@ -8,8 +9,19 @@ const Home = () => {
     const [reports, setReports] = useState([]);
     const [lightboxMedia, setLightboxMedia] = useState(null); // { url, type }
     const { user, token } = useAuth();
+    const navigate = useNavigate();
 
     const [followedUsers, setFollowedUsers] = useState([]);
+
+    const fetchReports = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/reports`);
+            const data = await res.json();
+            setReports(data);
+        } catch (err) {
+            console.error("Failed to fetch reports", err);
+        }
+    };
 
     const fetchFollowedUsers = async () => {
         if (!token) return;
