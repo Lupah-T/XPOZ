@@ -2,13 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
+import { getMediaUrl } from '../utils/media';
 
-// Helper function to get the correct media URL
-const getMediaUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `${API_URL}/${url}`;
-};
 
 const Header = () => {
     const { user, logout } = useAuth();

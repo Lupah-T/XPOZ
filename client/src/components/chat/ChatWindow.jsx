@@ -33,7 +33,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         if (!selectedUser) return;
 
         try {
-            const url = `${API_URL} /api/messages / ${selectedUser._id}?limit = 20${before ? `&before=${before}` : ''} `;
+            const url = `${API_URL}/api/messages/${selectedUser._id}?limit=20${before ? `&before=${before}` : ''}`;
             const res = await fetch(url, {
                 headers: { 'x-auth-token': token }
             });
@@ -192,7 +192,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         if (editingMessage) {
             // Edit Message
             try {
-                const res = await fetch(`${API_URL} /api/messages / ${editingMessage._id} `, {
+                const res = await fetch(`${API_URL}/api/messages/${editingMessage._id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         }
 
         // New Message Logic with Optimistic UI
-        const tempId = `temp - ${Date.now()} -${Math.random()} `;
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
         const optimisticMessage = {
             _id: tempId,
             sender: user.id,
@@ -269,7 +269,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         formData.append('file', file);
 
         try {
-            const res = await fetch(`${API_URL} /api/messages / upload`, {
+            const res = await fetch(`${API_URL}/api/messages/upload`, {
                 method: 'POST',
                 headers: { 'x-auth-token': token },
                 body: formData
@@ -320,7 +320,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         if (!window.confirm(`Delete for ${mode === 'everyone' ? 'everyone' : 'me'}?`)) return;
 
         try {
-            const res = await fetch(`${API_URL} /api/messages / ${msgId}?mode = ${mode} `, {
+            const res = await fetch(`${API_URL}/api/messages/${msgId}?mode=${mode}`, {
                 method: 'DELETE',
                 headers: { 'x-auth-token': token }
             });
@@ -584,14 +584,14 @@ const ChatWindow = ({ selectedUser, onBack }) => {
     .loader {
     width: 24px;
     height: 24px;
-    border: 3px solid var(--glass - stroke);
-    border - top: 3px solid var(--primary);
-    border - radius: 50 %;
+    border: 3px solid var(--glass-stroke);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 @keyframes spin {
-    0 % { transform: rotate(0deg); }
-    100 % { transform: rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 `}</style>
         </div>
