@@ -3,6 +3,7 @@ import io from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../config';
 import CallOverlay from '../components/chat/CallOverlay';
+import NotificationToast from '../components/NotificationToast';
 
 const SocketContext = createContext();
 
@@ -20,6 +21,9 @@ export const SocketProvider = ({ children }) => {
     const [localStream, setLocalStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
     const peerConnection = useRef(null);
+
+    // Toasts
+    const [toasts, setToasts] = useState([]);
 
     const { token, user } = useAuth();
 
@@ -111,6 +115,9 @@ export const SocketProvider = ({ children }) => {
                         icon: '/vite.svg'
                     });
                 }
+                // Add in-app toast
+                const id = Date.now();
+                setToasts(prev => [...prev, { id, type, message, data }]);
             });
 
             // Call Listeners
@@ -285,6 +292,10 @@ export const SocketProvider = ({ children }) => {
         remoteStream
     };
 
+    const removeToast = (id) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    };
+
     return (
         <SocketContext.Provider value={value}>
             {children}
@@ -296,6 +307,26 @@ export const SocketProvider = ({ children }) => {
                 localStream={localStream}
                 remoteStream={remoteStream}
             />
+            {toasts.length > 0 && (
+                <div style={{
+                    position: 'fixed',
+                    top: '20px',
+                    right: '20px',
+                    zIndex: 10000,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    pointerEvents: 'none' /* Allow clicks pass through spacing */
+                }}>
+                    {toasts.map(toast => (
+                        <NotificationToast
+                            key={toast.id}
+                            notification={toast}
+                            onClose={() => removeToast(toast.id)}
+                        />
+                    ))}
+                </div>
+            )}
         </SocketContext.Provider>
     );
 };
