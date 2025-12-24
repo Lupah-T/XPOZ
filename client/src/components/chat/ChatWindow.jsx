@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import MessageBubble from './MessageBubble';
 import { getMediaUrl } from '../../utils/media';
+import VoiceRecorder from './VoiceRecorder';
 
 const ChatWindow = ({ selectedUser, onBack }) => {
     const { user, token } = useAuth();
@@ -21,6 +22,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
     const [replyingTo, setReplyingTo] = useState(null);
     const [editingMessage, setEditingMessage] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
     // Refs
     const messagesEndRef = useRef(null);
@@ -302,6 +304,45 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         }
     }
 
+    const handleVoiceNoteSend = async (audioBlob, duration) => {
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', audioBlob, `voice-note-${Date.now()}.webm`);
+
+        try {
+            const res = await fetch(`${API_URL}/api/messages/upload`, {
+                method: 'POST',
+                headers: { 'x-auth-token': token },
+                body: formData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                socket.emit('private-message', {
+                    senderId: user.id,
+                    recipientId: selectedUser._id,
+                    content: '',
+                    attachments: [{
+                        url: data.url,
+                        type: 'audio',
+                        name: data.name,
+                        size: data.size,
+                        mimeType: data.mimeType || 'audio/webm',
+                        duration: duration
+                    }],
+                    replyTo: replyingTo ? replyingTo._id : null
+                });
+                setReplyingTo(null);
+                setIsRecordingVoice(false);
+            }
+        } catch (err) {
+            console.error('Voice note upload error:', err);
+            alert('Failed to send voice note');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const onReply = (msg) => {
         setReplyingTo(msg);
         setEditingMessage(null);
@@ -556,6 +597,23 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         {isUploading ? '⌛' : '📎'}
                     </button>
 
+                    {/* Microphone Button */}
+                    <button
+                        type="button"
+                        onClick={() => setIsRecordingVoice(true)}
+                        disabled={isUploading || isRecordingVoice}
+                        style={{
+                            background: 'none', border: 'none', color: 'var(--text-muted)',
+                            fontSize: '1.4rem', cursor: 'pointer', padding: '8px 4px',
+                            display: 'flex', alignItems: 'center', transition: 'transform 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        title="Record Voice Note"
+                    >
+                        🎤
+                    </button>
+
                     <textarea
                         id="chat-input"
                         value={newMessage}
@@ -614,6 +672,14 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                     </button>
                 </form>
             </div>
+
+            {/* Voice Recorder Overlay */}
+            {isRecordingVoice && (
+                <VoiceRecorder
+                    onSend={handleVoiceNoteSend}
+                    onCancel={() => setIsRecordingVoice(false)}
+                />
+            )}
 
             <style>{`
     .loader {

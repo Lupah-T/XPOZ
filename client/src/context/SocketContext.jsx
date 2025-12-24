@@ -306,6 +306,7 @@ export const SocketProvider = ({ children }) => {
                 onEnd={endCall}
                 localStream={localStream}
                 remoteStream={remoteStream}
+                isUserOnline={call ? onlineUsers.get(call.otherUser?._id)?.isOnline : false}
             />
             {toasts.length > 0 && (
                 <div style={{

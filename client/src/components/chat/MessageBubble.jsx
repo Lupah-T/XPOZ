@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import VoiceNotePlayer from './VoiceNotePlayer';
 
 const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDelete }) => {
     const [showMenu, setShowMenu] = useState(false);
@@ -146,29 +147,14 @@ const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDel
                                 </div>
                             )}
 
-                            {/* Audio */}
+                            {/* Audio / Voice Notes */}
                             {att.type === 'audio' && (
-                                <div style={{
-                                    background: '#1e293b',
-                                    padding: '12px',
-                                    borderRadius: '8px',
-                                    minWidth: '200px'
-                                }}>
-                                    <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>🎵</span>
-                                        <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {att.name || 'Audio'}
-                                        </span>
-                                        <a
-                                            href={att.url}
-                                            download={att.name}
-                                            style={{ color: '#a855f7', textDecoration: 'none', fontSize: '0.9rem' }}
-                                        >
-                                            ⬇
-                                        </a>
-                                    </div>
-                                    <audio src={att.url} controls style={{ width: '100%' }} />
-                                </div>
+                                <VoiceNotePlayer
+                                    url={att.url}
+                                    duration={att.duration}
+                                    name={att.name}
+                                    isOwn={isOwn}
+                                />
                             )}
 
                             {/* Documents (PDF, DOC, XLS, etc.) */}

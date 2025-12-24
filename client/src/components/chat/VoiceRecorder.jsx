@@ -1,0 +1,263 @@
+import React, { useState, useRef, useEffect } from 'react';
+
+const VoiceRecorder = ({ onSend, onCancel }) => {
+    const [isRecording, setIsRecording] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [audioBlob, setAudioBlob] = useState(null);
+
+    const mediaRecorderRef = useRef(null);
+    const chunksRef = useRef([]);
+    const timerRef = useRef(null);
+
+    useEffect(() => {
+        // Start recording immediately when component mounts
+        startRecording();
+
+        return () => {
+            stopTimer();
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+            }
+        };
+    }, []);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+
+            mediaRecorderRef.current = mediaRecorder;
+            chunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    chunksRef.current.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                setAudioBlob(blob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            startTimer();
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Could not access microphone. Please grant permission.');
+            onCancel();
+        }
+    };
+
+    const startTimer = () => {
+        timerRef.current = setInterval(() => {
+            setDuration(prev => {
+                const newDuration = prev + 1;
+                // Auto-stop at 5 minutes (300 seconds)
+                if (newDuration >= 300) {
+                    handleStopRecording();
+                }
+                return newDuration;
+            });
+        }, 1000);
+    };
+
+    const stopTimer = () => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    };
+
+    const handleStopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            stopTimer();
+        }
+    };
+
+    const handleCancel = () => {
+        handleStopRecording();
+        onCancel();
+    };
+
+    const handleSend = () => {
+        if (audioBlob) {
+            onSend(audioBlob, duration);
+        }
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: 'var(--glass-bg)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            padding: '1.5rem',
+            borderTop: '1px solid var(--glass-stroke)',
+            zIndex: 1000,
+            animation: 'slideUp 0.3s ease'
+        }}>
+            <div style={{
+                maxWidth: '600px',
+                margin: '0 auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+            }}>
+                {/* Recording Indicator */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    justifyContent: 'center'
+                }}>
+                    {isRecording && (
+                        <div style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: '#ef4444',
+                            animation: 'pulse 1.5s ease-in-out infinite'
+                        }} />
+                    )}
+                    <span style={{
+                        fontSize: '1.5rem',
+                        fontWeight: '700',
+                        color: 'var(--text-main)',
+                        fontVariantNumeric: 'tabular-nums'
+                    }}>
+                        {formatTime(duration)}
+                    </span>
+                </div>
+
+                {/* Waveform Visualization Placeholder */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    height: '60px'
+                }}>
+                    {[...Array(30)].map((_, i) => (
+                        <div
+                            key={i}
+                            style={{
+                                width: '3px',
+                                height: isRecording ? `${Math.random() * 60 + 10}px` : '10px',
+                                background: 'var(--primary)',
+                                borderRadius: '2px',
+                                transition: 'height 0.1s',
+                                animation: isRecording ? `wave ${0.5 + Math.random()}s ease-in-out infinite` : 'none',
+                                animationDelay: `${i * 0.05}s`
+                            }}
+                        />
+                    ))}
+                </div>
+
+                {/* Controls */}
+                <div style={{
+                    display: 'flex',
+                    gap: '1rem',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
+                    <button
+                        onClick={handleCancel}
+                        style={{
+                            width: '60px',
+                            height: '60px',
+                            borderRadius: '50%',
+                            border: 'none',
+                            background: '#ef4444',
+                            color: 'white',
+                            fontSize: '1.5rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                            transition: 'transform 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        title="Cancel"
+                    >
+                        🗑️
+                    </button>
+
+                    {!isRecording && audioBlob && (
+                        <button
+                            onClick={handleSend}
+                            style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: 'var(--primary)',
+                                color: 'white',
+                                fontSize: '1.5rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                                transition: 'transform 0.2s',
+                                animation: 'scaleIn 0.3s ease'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                            title="Send"
+                        >
+                            🚀
+                        </button>
+                    )}
+                </div>
+
+                <p style={{
+                    textAlign: 'center',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-muted)',
+                    margin: 0
+                }}>
+                    {isRecording ? 'Recording voice note...' : 'Recording stopped. Send or cancel?'}
+                </p>
+            </div>
+
+            <style>{`
+                @keyframes slideUp {
+                    from { transform: translateY(100%); }
+                    to { transform: translateY(0); }
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.5; transform: scale(1.2); }
+                }
+                @keyframes wave {
+                    0%, 100% { height: 10px; }
+                    50% { height: 50px; }
+                }
+                @keyframes scaleIn {
+                    from { transform: scale(0); }
+                    to { transform: scale(1); }
+                }
+            `}</style>
+        </div>
+    );
+};
+
+export default VoiceRecorder;

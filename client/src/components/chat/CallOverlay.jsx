@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const CallOverlay = ({ call, onAccept, onReject, onEnd, localStream, remoteStream }) => {
+const CallOverlay = ({ call, onAccept, onReject, onEnd, localStream, remoteStream, isUserOnline }) => {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
@@ -48,7 +48,7 @@ const CallOverlay = ({ call, onAccept, onReject, onEnd, localStream, remoteStrea
                 </div>
                 <h2 style={{ margin: 0, fontSize: '1.75rem', fontWeight: '700' }}>{call.otherUser?.pseudoName || 'User'}</h2>
                 <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem', fontSize: '1.1rem' }}>
-                    {isIncoming ? 'Incoming Call...' : isRinging ? 'Ringing...' : 'Active Call'}
+                    {isIncoming ? 'Incoming Call...' : isRinging ? (isUserOnline ? 'Ringing...' : 'Calling...') : 'Active Call'}
                 </p>
             </div>
 
