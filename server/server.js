@@ -53,6 +53,12 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/anonymous_r
     })
     .catch(err => console.error(err));
 
+// Middleware to make io available in routes
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
 // Routes
 const reportsRouter = require('./routes/reports');
 const authRouter = require('./routes/auth');

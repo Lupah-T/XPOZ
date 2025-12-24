@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { API_URL } from '../config';
 import { getMediaUrl } from '../utils/media';
 
 
 const Header = () => {
     const { user, logout } = useAuth();
+    const { totalUnreadCount } = useSocket();
     const navigate = useNavigate();
     const [showAnnouncements, setShowAnnouncements] = React.useState(false);
     const [AnnouncementModal, setAnnouncementModal] = React.useState(null);
@@ -138,7 +140,30 @@ const Header = () => {
                     }}>
                         <Link to="/" style={navIconStyle} title="Home">🏠</Link>
                         <Link to="/users" style={navIconStyle} title="Users">👥</Link>
-                        <Link to="/messages" style={navIconStyle} title="Messages">💬</Link>
+                        <Link to="/messages" style={{ ...navIconStyle, position: 'relative' }} title="Messages">
+                            💬
+                            {totalUnreadCount > 0 && (
+                                <span style={{
+                                    position: 'absolute',
+                                    top: '-4px',
+                                    right: '-4px',
+                                    minWidth: '18px',
+                                    height: '18px',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 'bold',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '2px solid var(--glass-bg)',
+                                    padding: '0 4px'
+                                }}>
+                                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                                </span>
+                            )}
+                        </Link>
                         <Link to="/create" style={navIconStyle} title="New Post">➕</Link>
                         <button
                             onClick={handleOpenAnnouncements}

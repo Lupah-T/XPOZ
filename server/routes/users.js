@@ -50,6 +50,20 @@ router.post('/:id/follow', auth, async (req, res) => {
             userToFollow.followers.push(req.user.id);
             await currentUser.save();
             await userToFollow.save();
+
+            // Emit notification
+            if (req.io) {
+                req.io.to(req.params.id).emit('notification', {
+                    type: 'follow',
+                    message: `${currentUser.pseudoName} started following you`,
+                    data: {
+                        followerId: currentUser._id,
+                        followerName: currentUser.pseudoName,
+                        followerAvatar: currentUser.avatarUrl
+                    }
+                });
+            }
+
             res.json({ message: 'User followed', isFollowing: true });
         } else {
             // Unfollow
@@ -101,33 +115,7 @@ router.put('/bio', auth, async (req, res) => {
     }
 });
 
-// Follow a user
-router.post('/:id/follow', auth, async (req, res) => {
-    try {
-        if (req.params.id === req.user.id) {
-            return res.status(400).json({ message: 'Cannot follow yourself' });
-        }
 
-        const userToFollow = await User.findById(req.params.id);
-        if (!userToFollow) return res.status(404).json({ message: 'User not found' });
-
-        const currentUser = await User.findById(req.user.id);
-
-        if (currentUser.following.includes(req.params.id)) {
-            return res.status(400).json({ message: 'Already following this user' });
-        }
-
-        currentUser.following.push(req.params.id);
-        userToFollow.followers.push(req.user.id);
-
-        await currentUser.save();
-        await userToFollow.save();
-
-        res.json({ message: 'User followed successfully' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
 
 // Unfollow a user
 router.delete('/:id/unfollow', auth, async (req, res) => {

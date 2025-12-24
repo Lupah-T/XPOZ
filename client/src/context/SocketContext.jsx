@@ -101,6 +101,18 @@ export const SocketProvider = ({ children }) => {
                 }
             });
 
+            // Global Notification Listener (Follows, etc)
+            newSocket.on('notification', ({ type, message, data }) => {
+                notificationSound.play().catch(e => console.log('Audio play failed', e));
+
+                if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                    new Notification('X-POZ', {
+                        body: message,
+                        icon: '/vite.svg'
+                    });
+                }
+            });
+
             // Call Listeners
             newSocket.on('incoming-call', ({ from, signal, type }) => {
                 // Fetch user info for the overlay (pseudoName, etc)
