@@ -125,15 +125,16 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
     return (
         <div style={{
             position: 'fixed',
-            bottom: 0,
+            bottom: window.innerWidth < 768 ? 'calc(65px + env(safe-area-inset-bottom, 0rem))' : 0,
             left: 0,
             right: 0,
             background: 'var(--glass-bg)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
             padding: '1.5rem',
+            paddingBottom: window.innerWidth < 768 ? '1.5rem' : 'calc(1.5rem + env(safe-area-inset-bottom, 0rem))',
             borderTop: '1px solid var(--glass-stroke)',
-            zIndex: 1000,
+            zIndex: 1100, // Higher than ChatWindow (1010) and MobileNav (1000)
             animation: 'slideUp 0.3s ease'
         }}>
             <div style={{

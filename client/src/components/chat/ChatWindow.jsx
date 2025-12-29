@@ -529,7 +529,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                 justifyContent: 'center',
                 flexDirection: 'column',
                 alignItems: 'center',
-                zIndex: 10,
+                zIndex: 1010, // Higher than MobileNav (1000)
                 boxShadow: '0 -4px 12px rgba(0,0,0,0.1)'
             }}>
                 {/* Reply/Edit Preview */}

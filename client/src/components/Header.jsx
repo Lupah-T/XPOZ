@@ -132,166 +132,173 @@ const Header = () => {
                         X-POZ
                     </Link>
 
-                    {/* Horizontal Navigation Icons */}
-                    <div
-                        className="header-nav-icons"
-                        style={{
-                            display: window.innerWidth < 768 ? 'none' : 'flex',
-                            gap: '0.5rem',
-                            alignItems: 'center'
-                        }}
-                    >
-                        <Link to="/" style={navIconStyle} title="Home">🏠</Link>
-                        <Link to="/users" style={navIconStyle} title="Users">👥</Link>
-                        <Link to="/messages" style={{ ...navIconStyle, position: 'relative' }} title="Messages">
-                            💬
-                            {totalUnreadCount > 0 && (
-                                <span style={{
-                                    position: 'absolute',
-                                    top: '-4px',
-                                    right: '-4px',
-                                    minWidth: '18px',
-                                    height: '18px',
-                                    background: '#ef4444',
-                                    color: 'white',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 'bold',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    border: '2px solid var(--glass-bg)',
-                                    padding: '0 4px'
-                                }}>
-                                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
-                                </span>
-                            )}
-                        </Link>
-                        <Link to="/create" style={navIconStyle} title="New Post">➕</Link>
-                        <button
-                            onClick={handleOpenAnnouncements}
-                            style={{ ...navIconStyle, position: 'relative' }}
-                            title="Announcements"
+                    {/* Navigation Container */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {/* Desktop-only Navigation Icons */}
+                        <div
+                            className="header-nav-icons"
+                            style={{
+                                display: 'flex',
+                                gap: '0.5rem',
+                                alignItems: 'center'
+                            }}
                         >
-                            📢
-                            {hasNewAnnouncements && (
-                                <span style={{
-                                    position: 'absolute',
-                                    top: '4px',
-                                    right: '4px',
-                                    width: '8px',
-                                    height: '8px',
-                                    background: '#ef4444',
-                                    borderRadius: '50%',
-                                    border: '1.5px solid var(--glass-bg)'
-                                }}></span>
-                            )}
-                        </button>
+                            <Link to="/" className="desktop-only-icon" style={navIconStyle} title="Home">🏠</Link>
+                            <Link to="/users" className="desktop-only-icon" style={navIconStyle} title="Users">👥</Link>
+                            <Link to="/messages" className="desktop-only-icon" style={{ ...navIconStyle, position: 'relative' }} title="Messages">
+                                💬
+                                {totalUnreadCount > 0 && (
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '-4px',
+                                        right: '-4px',
+                                        minWidth: '18px',
+                                        height: '18px',
+                                        background: '#ef4444',
+                                        color: 'white',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 'bold',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        border: '2px solid var(--glass-bg)',
+                                        padding: '0 4px'
+                                    }}>
+                                        {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                                    </span>
+                                )}
+                            </Link>
+                            <Link to="/create" className="desktop-only-icon" style={navIconStyle} title="New Post">➕</Link>
+                        </div>
 
-                        {/* 3-dot Menu */}
-                        <div style={{ position: 'relative' }} ref={menuRef}>
+                        {/* Always Visible: Announcements & 3-dot Menu */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <button
-                                onClick={() => setShowMenu(!showMenu)}
-                                style={navIconStyle}
-                                title="Menu"
+                                onClick={handleOpenAnnouncements}
+                                style={{ ...navIconStyle, position: 'relative' }}
+                                title="Announcements"
                             >
-                                ⋯
+                                📢
+                                {hasNewAnnouncements && (
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '4px',
+                                        right: '4px',
+                                        width: '8px',
+                                        height: '8px',
+                                        background: '#ef4444',
+                                        borderRadius: '50%',
+                                        border: '1.5px solid var(--glass-bg)'
+                                    }}></span>
+                                )}
                             </button>
 
-                            {showMenu && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    right: 0,
-                                    marginTop: '0.5rem',
-                                    background: 'var(--surface)',
-                                    border: '1px solid var(--glass-stroke)',
-                                    borderRadius: '12px',
-                                    minWidth: '180px',
-                                    boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-                                    zIndex: 1001,
-                                    padding: '0.5rem 0'
-                                }}>
-                                    {user && (
-                                        <>
-                                            <div style={{
-                                                padding: '0.75rem 1rem',
-                                                borderBottom: '1px solid var(--glass-stroke)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.75rem',
-                                                marginBottom: '0.25rem'
-                                            }}>
-                                                <img
-                                                    src={getMediaUrl(user.avatarUrl) || 'https://via.placeholder.com/32'}
-                                                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                                                    alt=""
-                                                />
-                                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)' }}>
-                                                    {user.pseudoName}
+                            {/* 3-dot Menu */}
+                            <div style={{ position: 'relative' }} ref={menuRef}>
+                                <button
+                                    onClick={() => setShowMenu(!showMenu)}
+                                    style={navIconStyle}
+                                    title="Menu"
+                                >
+                                    ⋯
+                                </button>
+
+                                {showMenu && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        right: 0,
+                                        marginTop: '0.5rem',
+                                        background: 'var(--surface)',
+                                        border: '1px solid var(--glass-stroke)',
+                                        borderRadius: '12px',
+                                        minWidth: '200px', // Slightly wider
+                                        boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                                        zIndex: 1001,
+                                        padding: '0.5rem 0'
+                                    }}>
+                                        {user && (
+                                            <>
+                                                <div style={{
+                                                    padding: '0.75rem 1rem',
+                                                    borderBottom: '1px solid var(--glass-stroke)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.75rem',
+                                                    marginBottom: '0.25rem'
+                                                }}>
+                                                    <img
+                                                        src={getMediaUrl(user.avatarUrl) || 'https://via.placeholder.com/32'}
+                                                        style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                                                        alt=""
+                                                    />
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main)' }}>
+                                                        {user.pseudoName}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <button
-                                                onClick={() => { navigate(`/profile/${user.id}`); setShowMenu(false); }}
-                                                className="menu-item"
-                                            >
-                                                👤 View Profile
-                                            </button>
-                                            {user.role === 'admin' && (
                                                 <button
-                                                    onClick={() => { navigate('/admin/dashboard'); setShowMenu(false); }}
+                                                    onClick={() => { navigate(`/profile/${user.id}`); setShowMenu(false); }}
                                                     className="menu-item"
                                                 >
-                                                    🛡️ Admin Portal
+                                                    👤 View Profile
+                                                </button>
+                                                {user.role === 'admin' && (
+                                                    <button
+                                                        onClick={() => { navigate('/admin/dashboard'); setShowMenu(false); }}
+                                                        className="menu-item"
+                                                    >
+                                                        🛡️ Admin Portal
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* Theme Selector */}
+                                        <div style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>THEME</div>
+                                        <div style={{ display: 'flex', padding: '0.25rem 0.5rem', gap: '0.25rem' }}>
+                                            {['Default', 'Light', 'Dark'].map((t) => (
+                                                <button
+                                                    key={t}
+                                                    onClick={() => setTheme(t.toLowerCase())}
+                                                    style={{
+                                                        flex: 1,
+                                                        fontSize: '0.75rem',
+                                                        padding: '0.4rem',
+                                                        borderRadius: '6px',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        background: theme === t.toLowerCase() ? 'var(--primary)' : 'var(--surface-hover)',
+                                                        color: theme === t.toLowerCase() ? 'white' : 'var(--text-main)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    {t}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div style={{ borderTop: '1px solid var(--glass-stroke)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
+                                            {user ? (
+                                                <button
+                                                    onClick={() => { logout(); setShowMenu(false); }}
+                                                    className="menu-item"
+                                                    style={{ color: '#ef4444' }}
+                                                >
+                                                    🚪 Logout
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => { navigate('/auth'); setShowMenu(false); }}
+                                                    className="menu-item"
+                                                >
+                                                    🔑 Login / Register
                                                 </button>
                                             )}
-                                        </>
-                                    )}
-
-                                    {/* Theme Selector */}
-                                    <div style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>THEME</div>
-                                    <div style={{ display: 'flex', padding: '0.25rem 0.5rem', gap: '0.25rem' }}>
-                                        {['Default', 'Light', 'Dark'].map((t) => (
-                                            <button
-                                                key={t}
-                                                onClick={() => setTheme(t.toLowerCase())}
-                                                style={{
-                                                    flex: 1,
-                                                    fontSize: '0.75rem',
-                                                    padding: '0.4rem',
-                                                    borderRadius: '6px',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    background: theme === t.toLowerCase() ? 'var(--primary)' : 'var(--surface-hover)',
-                                                    color: theme === t.toLowerCase() ? 'white' : 'var(--text-main)',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                {t}
-                                            </button>
-                                        ))}
+                                        </div>
                                     </div>
-
-                                    <div style={{ borderTop: '1px solid var(--glass-stroke)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
-                                        {user ? (
-                                            <button
-                                                onClick={() => { logout(); setShowMenu(false); }}
-                                                className="menu-item"
-                                                style={{ color: '#ef4444' }}
-                                            >
-                                                🚪 Logout
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => { navigate('/auth'); setShowMenu(false); }}
-                                                className="menu-item"
-                                            >
-                                                🔑 Login / Register
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -316,6 +323,11 @@ const Header = () => {
                 }
                 .nav-icon:hover {
                     background: var(--surface-hover) !important;
+                }
+                @media (max-width: 767px) {
+                    .desktop-only-icon {
+                        display: none !important;
+                    }
                 }
             `}</style>
 
