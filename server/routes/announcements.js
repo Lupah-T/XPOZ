@@ -47,7 +47,7 @@ router.post('/', [auth, upload.single('file')], async (req, res) => {
             attachment = {
                 url: req.file.path,
                 name: req.file.originalname,
-                type: fileType
+                fileType: fileType
             };
         }
 
@@ -64,8 +64,8 @@ router.post('/', [auth, upload.single('file')], async (req, res) => {
         const announcement = await newAnnouncement.save();
         res.json(announcement);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        console.error('Error in announcement upload:', err);
+        res.status(500).send('Server Error: ' + err.message);
     }
 });
 

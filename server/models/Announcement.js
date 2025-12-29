@@ -12,7 +12,7 @@ const AnnouncementSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['info', 'alert', 'success'],
+        enum: ['info', 'alert', 'success', 'announcement', 'update'],
         default: 'info'
     },
     isActive: {
@@ -29,7 +29,7 @@ const AnnouncementSchema = new mongoose.Schema({
     },
     attachment: {
         url: String,
-        type: String, // 'apk', 'image', 'document'
+        fileType: String, // 'apk', 'image', 'document'
         name: String
     },
     author: {
