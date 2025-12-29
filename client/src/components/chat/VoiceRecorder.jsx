@@ -4,10 +4,13 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [duration, setDuration] = useState(0);
     const [audioBlob, setAudioBlob] = useState(null);
+    const [isPreviewing, setIsPreviewing] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState(null);
 
     const mediaRecorderRef = useRef(null);
     const chunksRef = useRef([]);
     const timerRef = useRef(null);
+    const audioRef = useRef(null);
 
     useEffect(() => {
         // Start recording immediately when component mounts
@@ -17,6 +20,9 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
             stopTimer();
             if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
                 mediaRecorderRef.current.stop();
+            }
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
             }
         };
     }, []);
@@ -40,6 +46,8 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
             mediaRecorder.onstop = () => {
                 const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
                 setAudioBlob(blob);
+                const url = URL.createObjectURL(blob);
+                setPreviewUrl(url);
                 stream.getTracks().forEach(track => track.stop());
             };
 
@@ -90,6 +98,22 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
         if (audioBlob) {
             onSend(audioBlob, duration);
         }
+    };
+
+    const togglePreview = () => {
+        if (!audioRef.current) return;
+
+        if (isPreviewing) {
+            audioRef.current.pause();
+            setIsPreviewing(false);
+        } else {
+            audioRef.current.play();
+            setIsPreviewing(true);
+        }
+    };
+
+    const handleAudioEnded = () => {
+        setIsPreviewing(false);
     };
 
     const formatTime = (seconds) => {
@@ -159,9 +183,9 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
                             style={{
                                 width: '3px',
                                 height: isRecording ? `${Math.random() * 60 + 10}px` : '10px',
-                                background: 'var(--primary)',
+                                background: isRecording ? 'var(--primary)' : 'var(--text-muted)',
                                 borderRadius: '2px',
-                                transition: 'height 0.1s',
+                                transition: 'all 0.1s',
                                 animation: isRecording ? `wave ${0.5 + Math.random()}s ease-in-out infinite` : 'none',
                                 animationDelay: `${i * 0.05}s`
                             }}
@@ -169,58 +193,123 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
                     ))}
                 </div>
 
+                {/* Audio Preview Hidden Element */}
+                {previewUrl && (
+                    <audio
+                        ref={audioRef}
+                        src={previewUrl}
+                        onEnded={handleAudioEnded}
+                        onPause={() => setIsPreviewing(false)}
+                        onPlay={() => setIsPreviewing(true)}
+                        style={{ display: 'none' }}
+                    />
+                )}
+
                 {/* Controls */}
                 <div style={{
                     display: 'flex',
-                    gap: '1rem',
+                    gap: '1.5rem',
                     justifyContent: 'center',
                     alignItems: 'center'
                 }}>
+                    {/* Delete/Cancel Button */}
                     <button
                         onClick={handleCancel}
                         style={{
-                            width: '60px',
-                            height: '60px',
+                            width: '50px',
+                            height: '50px',
                             borderRadius: '50%',
                             border: 'none',
-                            background: '#ef4444',
-                            color: 'white',
-                            fontSize: '1.5rem',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            color: '#ef4444',
+                            fontSize: '1.2rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
-                            transition: 'transform 0.2s'
+                            transition: 'all 0.2s'
                         }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
                         title="Cancel"
                     >
                         🗑️
                     </button>
 
-                    {!isRecording && audioBlob && (
+                    {/* Middle Action: Stop or Play Preview */}
+                    {isRecording ? (
                         <button
-                            onClick={handleSend}
+                            onClick={handleStopRecording}
                             style={{
-                                width: '60px',
-                                height: '60px',
+                                width: '70px',
+                                height: '70px',
                                 borderRadius: '50%',
                                 border: 'none',
-                                background: 'var(--primary)',
+                                background: '#ef4444',
                                 color: 'white',
-                                fontSize: '1.5rem',
+                                fontSize: '1.8rem',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                                transition: 'transform 0.2s',
+                                boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
+                                transition: 'transform 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                            title="Stop Recording"
+                        >
+                            ⏹️
+                        </button>
+                    ) : (
+                        previewUrl && (
+                            <button
+                                onClick={togglePreview}
+                                style={{
+                                    width: '70px',
+                                    height: '70px',
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: 'var(--primary)',
+                                    color: 'white',
+                                    fontSize: '1.8rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)',
+                                    transition: 'transform 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                title={isPreviewing ? "Pause" : "Play Preview"}
+                            >
+                                {isPreviewing ? '⏸️' : '▶️'}
+                            </button>
+                        )
+                    )}
+
+                    {/* Send Button */}
+                    {!isRecording && audioBlob && (
+                        <button
+                            onClick={handleSend}
+                            style={{
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: 'rgba(34, 197, 94, 0.1)',
+                                color: '#22c55e',
+                                fontSize: '1.2rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s',
                                 animation: 'scaleIn 0.3s ease'
                             }}
-                            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(34, 197, 94, 0.1)'}
                             title="Send"
                         >
                             🚀
@@ -234,7 +323,7 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
                     color: 'var(--text-muted)',
                     margin: 0
                 }}>
-                    {isRecording ? 'Recording voice note...' : 'Recording stopped. Send or cancel?'}
+                    {isRecording ? 'Recording... click square to stop' : 'Preview your message before sending'}
                 </p>
             </div>
 

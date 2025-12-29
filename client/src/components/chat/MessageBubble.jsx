@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import VoiceNotePlayer from './VoiceNotePlayer';
+import { formatMessageTime } from '../../utils/dateUtils';
 
 const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDelete }) => {
     const [showMenu, setShowMenu] = useState(false);
@@ -236,7 +237,7 @@ const MessageBubble = ({ message, isOwn, previousMessage, onReply, onEdit, onDel
                     justifyContent: 'flex-end',
                     gap: '4px'
                 }}>
-                    {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatMessageTime(message.createdAt)}
                     {isOwn && (
                         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.4', fontSize: '0.6rem', marginLeft: '2px' }}>
                             {message.read ? (

@@ -5,6 +5,7 @@ import { useSocket } from '../../context/SocketContext';
 import MessageBubble from './MessageBubble';
 import { getMediaUrl } from '../../utils/media';
 import VoiceRecorder from './VoiceRecorder';
+import { formatLastSeen } from '../../utils/dateUtils';
 
 const ChatWindow = ({ selectedUser, onBack }) => {
     const { user, token } = useAuth();
@@ -446,7 +447,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         <div style={{ fontSize: '0.75rem', color: isTyping ? 'var(--primary)' : 'var(--text-muted)', height: '1.2em', transition: 'color 0.3s' }}>
                             {isTyping ? 'Typing...' : (
                                 selectedUser.isOnline ? 'Active now' : (
-                                    selectedUser.lastSeen ? `Last seen ${new Date(selectedUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ` : ''
+                                    selectedUser.lastSeen ? `Last seen ${formatLastSeen(selectedUser.lastSeen)}` : ''
                                 )
                             )}
                         </div>

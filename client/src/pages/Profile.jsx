@@ -132,36 +132,111 @@ const Profile = () => {
             <Header />
             <main className="container" style={{ flex: 1, paddingBottom: '3rem', maxWidth: '935px' }}>
                 {/* Profile Header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', marginBottom: '3rem', padding: '0 2rem' }}>
-
-                    <div style={{ flexShrink: 0 }}>
+                {/* Profile Header */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '3rem 1.5rem',
+                    textAlign: 'center',
+                    background: 'var(--surface)',
+                    borderRadius: '24px',
+                    border: '1px solid var(--glass-stroke)',
+                    marginBottom: '3rem',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+                }}>
+                    {/* Avatar at Top */}
+                    <div style={{
+                        position: 'relative',
+                        marginBottom: '1.5rem'
+                    }}>
                         {profileUser.avatarUrl ? (
-                            <img src={getMediaUrl(profileUser.avatarUrl)} alt="Avatar" style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover' }} />
+                            <img
+                                src={getMediaUrl(profileUser.avatarUrl)}
+                                alt="Avatar"
+                                style={{
+                                    width: '160px',
+                                    height: '160px',
+                                    borderRadius: '80px', // Circular
+                                    objectFit: 'cover',
+                                    border: '4px solid var(--primary)',
+                                    boxShadow: '0 8px 30px rgba(139, 92, 246, 0.4)'
+                                }}
+                            />
                         ) : (
-                            <div style={{ width: '150px', height: '150px', borderRadius: '50%', background: 'linear-gradient(45deg, #6d28d9, #ec4899)' }}></div>
+                            <div style={{
+                                width: '160px',
+                                height: '160px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, var(--primary), #ec4899)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '4rem'
+                            }}>
+                                {profileUser.pseudoName.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                        {/* Status Indicator inside avatar area or right below? Let's put it on the avatar */}
+                        {profileUser.isOnline && (
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '10px',
+                                right: '10px',
+                                width: '24px',
+                                height: '24px',
+                                backgroundColor: '#22c55e',
+                                borderRadius: '50%',
+                                border: '4px solid var(--surface)',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                            }} />
                         )}
                     </div>
 
-                    <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 300 }}>{profileUser.pseudoName}</h2>
+                    {/* Content Below */}
+                    <div style={{ maxWidth: '600px', width: '100%' }}>
+                        <h1 style={{
+                            margin: '0 0 0.5rem 0',
+                            fontSize: '2.5rem',
+                            fontWeight: '800',
+                            letterSpacing: '-1px'
+                        }}>
+                            {profileUser.pseudoName}
+                        </h1>
+                        <div style={{
+                            fontSize: '1.1rem',
+                            color: 'var(--primary)',
+                            fontWeight: '600',
+                            marginBottom: '1.5rem'
+                        }}>
+                            @{profileUser.handle}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            gap: '1rem',
+                            marginBottom: '2rem'
+                        }}>
                             {currentUser && currentUser.id !== profileUser._id && (
                                 <>
                                     <button
-                                        className="btn"
                                         onClick={handleFollowToggle}
                                         style={{
-                                            padding: '0.4rem 1.2rem',
-                                            fontWeight: '600',
-                                            background: isFollowing ? 'transparent' : 'var(--primary-color)',
-                                            border: isFollowing ? '1px solid var(--text-secondary)' : 'none',
-                                            color: isFollowing ? 'var(--text-primary)' : 'white'
+                                            padding: '0.8rem 2.5rem',
+                                            fontWeight: '700',
+                                            background: isFollowing ? 'transparent' : 'var(--primary)',
+                                            border: isFollowing ? '2px solid var(--glass-stroke)' : 'none',
+                                            color: 'white',
+                                            borderRadius: '12px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
                                         }}
                                     >
                                         {isFollowing ? 'Following' : 'Follow'}
                                     </button>
                                     <button
-                                        className="btn"
                                         onClick={() => navigate('/messages', {
                                             state: {
                                                 userId: profileUser._id,
@@ -170,11 +245,13 @@ const Profile = () => {
                                             }
                                         })}
                                         style={{
-                                            padding: '0.4rem 1.2rem',
-                                            fontWeight: '600',
-                                            background: 'transparent',
-                                            border: '1px solid var(--text-secondary)',
-                                            color: 'white'
+                                            padding: '0.8rem 2.5rem',
+                                            fontWeight: '700',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: '2px solid var(--glass-stroke)',
+                                            color: 'white',
+                                            borderRadius: '12px',
+                                            cursor: 'pointer'
                                         }}
                                     >
                                         Message
@@ -194,9 +271,12 @@ const Profile = () => {
                                         className="btn btn-primary"
                                         onClick={() => document.getElementById('avatarInput').click()}
                                         style={{
-                                            padding: '0.5rem 1.25rem',
-                                            fontSize: '0.9rem',
-                                            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.4)'
+                                            padding: '0.8rem 2.5rem',
+                                            fontSize: '1rem',
+                                            fontWeight: '700',
+                                            borderRadius: '12px',
+                                            background: 'var(--primary)',
+                                            boxShadow: '0 8px 20px rgba(139, 92, 246, 0.4)'
                                         }}
                                     >
                                         📸 Edit Profile
@@ -205,77 +285,115 @@ const Profile = () => {
                             )}
                         </div>
 
-                        <div style={{ display: 'flex', gap: '3rem', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
-                            <span><strong>{posts.length}</strong> posts</span>
-                            <span><strong>{stats.followers}</strong> followers</span>
-                            <span><strong>{stats.following}</strong> following</span>
+                        {/* Stats Panel */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            background: 'rgba(255,255,255,0.03)',
+                            borderRadius: '16px',
+                            padding: '1.5rem',
+                            marginBottom: '2rem',
+                            border: '1px solid var(--glass-stroke)'
+                        }}>
+                            <div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{posts.length}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Posts</div>
+                            </div>
+                            <div style={{ borderLeft: '1px solid var(--glass-stroke)', borderRight: '1px solid var(--glass-stroke)' }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{stats.followers}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Followers</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{stats.following}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Following</div>
+                            </div>
                         </div>
 
-                        {/* Bio Section */}
-                        <div>
-                            <div style={{ fontWeight: '600', marginBottom: '0.2rem' }}>{profileUser.pseudoName}</div>
-                            <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '0.5rem' }}>@{profileUser.handle}</div>
+                        {/* Bio / Description */}
+                        <div style={{ padding: '0 1rem' }}>
                             {currentUser && currentUser.id === profileUser._id ? (
                                 editingBio ? (
-                                    <div>
+                                    <div style={{ textAlign: 'left' }}>
                                         <textarea
                                             value={bioText}
                                             onChange={(e) => setBioText(e.target.value)}
                                             maxLength={150}
-                                            placeholder="Write a short bio..."
-                                            className="textarea"
-                                            style={{ width: '100%', minHeight: '60px', marginBottom: '0.5rem', fontSize: '16px' }}
+                                            placeholder="Introduce yourself..."
+                                            style={{
+                                                width: '100%',
+                                                minHeight: '100px',
+                                                padding: '1rem',
+                                                background: 'rgba(0,0,0,0.2)',
+                                                border: '1px solid var(--primary)',
+                                                borderRadius: '12px',
+                                                color: 'white',
+                                                fontSize: '1rem',
+                                                resize: 'none',
+                                                outline: 'none',
+                                                marginBottom: '0.5rem'
+                                            }}
                                         />
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                                 {bioText.length}/150
                                             </span>
                                             <div style={{ gap: '0.5rem', display: 'flex' }}>
                                                 <button
-                                                    className="btn"
-                                                    onClick={() => {
-                                                        setBioText(profileUser.bio || '');
-                                                        setEditingBio(false);
-                                                    }}
-                                                    style={{ background: 'transparent', border: '1px solid var(--text-secondary)', padding: '0.4rem 1rem' }}
+                                                    onClick={() => setEditingBio(false)}
+                                                    style={{ background: 'transparent', border: '1px solid var(--glass-stroke)', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}
                                                 >
                                                     Cancel
                                                 </button>
                                                 <button
-                                                    className="btn"
                                                     onClick={handleBioSave}
-                                                    style={{ background: '#a855f7', padding: '0.4rem 1rem' }}
+                                                    style={{ background: 'var(--primary)', border: 'none', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
                                                 >
-                                                    Save
+                                                    Save Changes
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div>
-                                        <div style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>
-                                            {profileUser.bio || 'No bio yet'}
-                                        </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <p style={{
+                                            color: '#cbd5e1',
+                                            fontSize: '1.1rem',
+                                            lineHeight: '1.6',
+                                            margin: '0 0 1.5rem 0',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {profileUser.bio || 'Your story starts here... click edit to add a bio.'}
+                                        </p>
                                         <button
-                                            className="btn"
                                             onClick={() => setEditingBio(true)}
                                             style={{
-                                                background: 'rgba(168, 85, 247, 0.2)',
+                                                background: 'rgba(139, 92, 246, 0.1)',
                                                 border: '1px solid var(--primary)',
                                                 color: 'var(--primary)',
-                                                padding: '0.4rem 1rem',
-                                                fontSize: '0.85rem',
-                                                marginTop: '0.5rem'
+                                                padding: '0.6rem 1.5rem',
+                                                borderRadius: '10px',
+                                                fontSize: '0.9rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
                                             }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'; e.currentTarget.style.color = 'var(--primary)'; }}
                                         >
-                                            ✏️ Edit Bio
+                                            ✏️ Update Bio
                                         </button>
                                     </div>
                                 )
                             ) : (
-                                <div style={{ color: '#94a3b8' }}>
-                                    {profileUser.bio || 'No bio'}
-                                </div>
+                                <p style={{
+                                    color: '#cbd5e1',
+                                    fontSize: '1.1rem',
+                                    lineHeight: '1.6',
+                                    margin: 0,
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {profileUser.bio || 'No bio available.'}
+                                </p>
                             )}
                         </div>
                     </div>
