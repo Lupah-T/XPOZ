@@ -95,12 +95,13 @@ const ReportForm = () => {
         }
 
         const data = new FormData();
-        data.append('title', formData.title);
+        data.append('title', formData.title || (postMode === 'text' ? 'Styled Text Post' : 'Post'));
         data.append('description', formData.description);
 
         // Determine post type and add data
         if (postMode === 'text' && textPostData) {
             data.append('postType', 'text');
+            data.append('description', textPostData.text); // Map text content to description
             data.append('textStyle', JSON.stringify(textPostData.style));
         } else if (mediaFiles.length >= 1) {
             data.append('postType', 'media');
@@ -230,7 +231,10 @@ const ReportForm = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => setPostMode('text')}
+                            onClick={() => {
+                                setPostMode('text');
+                                setShowTextCreator(true);
+                            }}
                             style={{
                                 padding: '0.75rem',
                                 background: postMode === 'text' ? '#a855f7' : 'transparent',
@@ -250,8 +254,53 @@ const ReportForm = () => {
                             ✨ Text Post
                         </button>
                     </div>
+
+                    {/* Styled Text Preview (If in text mode and has data) */}
+                    {postMode === 'text' && textPostData && (
+                        <div style={{ marginBottom: '1.5rem', position: 'relative' }}>
+                            <div style={{
+                                width: '100%',
+                                aspectRatio: '1/1',
+                                background: textPostData.style.backgroundColor,
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '2rem',
+                                textAlign: 'center',
+                                color: textPostData.style.textColor,
+                                fontFamily: textPostData.style.fontFamily,
+                                fontSize: textPostData.style.fontSize,
+                                whiteSpace: 'pre-wrap',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                                border: '2px solid rgba(255,255,255,0.1)'
+                            }}>
+                                {textPostData.text}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowTextCreator(true)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '1rem',
+                                    right: '1rem',
+                                    background: 'rgba(0,0,0,0.5)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '20px',
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer',
+                                    backdropFilter: 'blur(4px)'
+                                }}
+                            >
+                                ✏️ Edit Style
+                            </button>
+                        </div>
+                    )}
+
                     {/* Title */}
-                    <div className="input-group">
+                    <div className="input-group" style={{ display: postMode === 'text' ? 'none' : 'block' }}>
                         <label className="label" htmlFor="title">Title</label>
                         <input
                             type="text"
@@ -267,7 +316,7 @@ const ReportForm = () => {
                     </div>
 
                     {/* Description */}
-                    <div className="input-group">
+                    <div className="input-group" style={{ display: postMode === 'text' ? 'none' : 'block' }}>
                         <label className="label" htmlFor="description">Description</label>
                         <textarea
                             id="description"
@@ -276,7 +325,7 @@ const ReportForm = () => {
                             placeholder="Share your thoughts..."
                             value={formData.description}
                             onChange={handleChange}
-                            required
+                            required={postMode !== 'text'}
                             rows={4}
                             style={{ fontSize: '16px' }}
                         />

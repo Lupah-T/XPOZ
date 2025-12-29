@@ -404,12 +404,49 @@ const Profile = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
                         {posts.map(post => (
                             <div key={post._id} style={{ aspectRatio: '1/1', background: '#334155', borderRadius: '4px', overflow: 'hidden', position: 'relative', cursor: 'pointer' }}>
-                                {post.evidenceType === 'image' ? (
-                                    <img src={getMediaUrl(post.evidenceUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : post.evidenceType === 'video' ? (
-                                    <video src={getMediaUrl(post.evidenceUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                {/* Multi-media/Single-media preview */}
+                                {(post.postType === 'media' || post.postType === 'mixed' || post.evidenceType === 'image' || post.evidenceType === 'video') ? (
+                                    <>
+                                        {/* Determine which URL to show */}
+                                        {post.media && post.media.length > 0 ? (
+                                            post.media[0].type === 'image' ? (
+                                                <img src={getMediaUrl(post.media[0].url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <video src={getMediaUrl(post.media[0].url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            )
+                                        ) : (
+                                            post.evidenceType === 'image' ? (
+                                                <img src={getMediaUrl(post.evidenceUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <video src={getMediaUrl(post.evidenceUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            )
+                                        )}
+                                        {post.media && post.media.length > 1 && (
+                                            <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '0.2rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem' }}>
+                                                📁 {post.media.length}
+                                            </div>
+                                        )}
+                                    </>
+                                ) : post.postType === 'text' ? (
+                                    <div style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        background: post.textStyle?.backgroundColor || '#667eea',
+                                        color: post.textStyle?.textColor || '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '0.5rem',
+                                        fontSize: '0.6rem', // Scaled down for thumbnail
+                                        textAlign: 'center',
+                                        fontWeight: '600',
+                                        fontFamily: post.textStyle?.fontFamily || 'Inter',
+                                        overflow: 'hidden'
+                                    }}>
+                                        {post.description}
+                                    </div>
                                 ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', textAlign: 'center', color: '#94a3b8', background: 'rgba(255,255,255,0.05)' }}>
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', textAlign: 'center', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', fontSize: '0.7rem' }}>
                                         {post.title}
                                     </div>
                                 )}
