@@ -165,7 +165,7 @@ const Home = () => {
     return (
         <>
             <Header />
-            <main className="container" style={{ flex: 1, paddingBottom: '3rem', maxWidth: '600px', margin: '0 auto' }}>
+            <main className="container" style={{ flex: 1, maxWidth: '600px', margin: '0 auto', paddingTop: '1rem' }}>
 
                 {/* Following Bubbles (Instagram style) */}
                 <div style={{

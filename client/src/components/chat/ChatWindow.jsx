@@ -518,7 +518,9 @@ const ChatWindow = ({ selectedUser, onBack }) => {
 
             <div style={{
                 padding: '0.75rem 1rem',
-                paddingBottom: 'env(safe-area-inset-bottom, 0.75rem)', // Handle mobile safe areas
+                paddingBottom: window.innerWidth < 768
+                    ? 'calc(75px + env(safe-area-inset-bottom, 0rem))'
+                    : 'env(safe-area-inset-bottom, 0.75rem)',
                 background: 'var(--glass-bg)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',

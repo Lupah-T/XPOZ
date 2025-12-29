@@ -115,6 +115,13 @@ body {
   box-sizing: border-box;
 }
 
+@media (max-width: 768px) {
+  .container {
+    padding-bottom: 80px !important;
+    /* Space for MobileNav */
+  }
+}
+
 h1 {
   font-size: 3rem;
   font-weight: 700;

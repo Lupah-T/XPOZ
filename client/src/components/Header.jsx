@@ -133,11 +133,14 @@ const Header = () => {
                     </Link>
 
                     {/* Horizontal Navigation Icons */}
-                    <div style={{
-                        display: 'flex',
-                        gap: '0.5rem',
-                        alignItems: 'center'
-                    }}>
+                    <div
+                        className="header-nav-icons"
+                        style={{
+                            display: window.innerWidth < 768 ? 'none' : 'flex',
+                            gap: '0.5rem',
+                            alignItems: 'center'
+                        }}
+                    >
                         <Link to="/" style={navIconStyle} title="Home">🏠</Link>
                         <Link to="/users" style={navIconStyle} title="Users">👥</Link>
                         <Link to="/messages" style={{ ...navIconStyle, position: 'relative' }} title="Messages">

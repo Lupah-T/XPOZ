@@ -130,7 +130,7 @@ const Profile = () => {
     return (
         <>
             <Header />
-            <main className="container" style={{ flex: 1, paddingBottom: '3rem', maxWidth: '935px' }}>
+            <main className="container" style={{ flex: 1, maxWidth: '935px', paddingTop: '1rem' }}>
                 {/* Profile Header */}
                 {/* Profile Header */}
                 <div style={{
