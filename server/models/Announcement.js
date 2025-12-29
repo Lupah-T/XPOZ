@@ -19,6 +19,10 @@ const AnnouncementSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    externalLink: {
+        type: String,
+        trim: true
+    },
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

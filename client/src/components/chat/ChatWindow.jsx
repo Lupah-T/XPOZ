@@ -338,9 +338,10 @@ const ChatWindow = ({ selectedUser, onBack }) => {
             }
         } catch (err) {
             console.error('Voice note upload error:', err);
-            alert('Failed to send voice note');
+            alert('Failed to send voice note. Please check your connection.');
         } finally {
             setIsUploading(false);
+            setIsRecordingVoice(false); // Ensure overlay closes
         }
     };
 

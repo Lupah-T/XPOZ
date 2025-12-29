@@ -29,12 +29,13 @@ router.post('/', auth, async (req, res) => {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
-        const { title, content, type } = req.body;
+        const { title, content, type, externalLink } = req.body;
 
         const newAnnouncement = new Announcement({
             title,
             content,
             type,
+            externalLink,
             author: req.user.id
         });
 

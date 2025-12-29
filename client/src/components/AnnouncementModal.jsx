@@ -12,7 +12,8 @@ const AnnouncementModal = ({ onClose }) => {
     const [formData, setFormData] = useState({
         title: '',
         content: '',
-        type: 'info'
+        type: 'info',
+        externalLink: ''
     });
 
     useEffect(() => {
@@ -61,7 +62,7 @@ const AnnouncementModal = ({ onClose }) => {
                 const newAnnouncement = await res.json();
                 setAnnouncements([newAnnouncement, ...announcements]);
                 setShowCreate(false);
-                setFormData({ title: '', content: '', type: 'info' });
+                setFormData({ title: '', content: '', type: 'info', externalLink: '' });
             }
         } catch (err) {
             alert('Failed to create announcement');
@@ -196,6 +197,23 @@ const AnnouncementModal = ({ onClose }) => {
                                         />
                                     </div>
 
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <input
+                                            type="url"
+                                            placeholder="External Link (optional, e.g. for updates)"
+                                            value={formData.externalLink}
+                                            onChange={e => setFormData({ ...formData, externalLink: e.target.value })}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                background: '#0f172a',
+                                                border: '1px solid #334155',
+                                                color: 'white',
+                                                borderRadius: '6px'
+                                            }}
+                                        />
+                                    </div>
+
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                         <button
                                             type="submit"
@@ -251,8 +269,8 @@ const AnnouncementModal = ({ onClose }) => {
                                     <div style={{
                                         padding: '1rem',
                                         borderLeft: `4px solid ${announcement.type === 'alert' ? '#ef4444' :
-                                                announcement.type === 'success' ? '#10b981' :
-                                                    '#3b82f6'
+                                            announcement.type === 'success' ? '#10b981' :
+                                                '#3b82f6'
                                             }`
                                     }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
@@ -279,9 +297,31 @@ const AnnouncementModal = ({ onClose }) => {
                                                 </button>
                                             )}
                                         </div>
-                                        <p style={{ margin: '0 0 0.5rem 0', color: '#cbd5e1', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                                        <p style={{ margin: '0 0 1rem 0', color: '#cbd5e1', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
                                             {announcement.content}
                                         </p>
+
+                                        {announcement.externalLink && (
+                                            <a
+                                                href={announcement.externalLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'inline-block',
+                                                    background: 'var(--primary)',
+                                                    color: 'white',
+                                                    padding: '0.6rem 1.2rem',
+                                                    borderRadius: '8px',
+                                                    textDecoration: 'none',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '700',
+                                                    marginBottom: '1rem',
+                                                    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                                                }}
+                                            >
+                                                🚀 Update / Learn More
+                                            </a>
+                                        )}
                                         <small style={{ color: '#64748b' }}>
                                             Posted by {announcement.author?.pseudoName || 'Admin'} • {new Date(announcement.createdAt).toLocaleDateString()}
                                         </small>
