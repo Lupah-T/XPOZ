@@ -110,7 +110,7 @@ const chatStorage = new CloudinaryStorage({
         return {
             folder: 'xpoz/chat',
             resource_type: 'raw', // Raw upload for non-media files
-            allowed_formats: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip', 'rar']
+            allowed_formats: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip', 'rar', 'apk']
         };
     }
 });
