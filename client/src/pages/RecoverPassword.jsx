@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
+import PasswordValidator from '../components/PasswordValidator';
 
 const RecoverPassword = () => {
     const [step, setStep] = useState(1); // 1: Pseudo, 2: Question/Answer
@@ -101,6 +102,7 @@ const RecoverPassword = () => {
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 required
                             />
+                            <PasswordValidator password={newPassword} />
                         </div>
 
                         <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Reset Password</button>

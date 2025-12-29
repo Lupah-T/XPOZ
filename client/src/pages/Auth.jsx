@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import PasswordValidator from '../components/PasswordValidator';
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -58,6 +59,7 @@ const Auth = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
+                        {!isLogin && <PasswordValidator password={password} />}
                     </div>
 
                     {!isLogin && (
