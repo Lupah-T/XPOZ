@@ -69,13 +69,14 @@ const avatarStorage = new CloudinaryStorage({
     }
 });
 
-// Storage for chat attachments - supports all file types
 const chatStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
         const isVideo = file.mimetype.startsWith('video/');
         const isImage = file.mimetype.startsWith('image/');
         const isAudio = file.mimetype.startsWith('audio/');
+
+        console.log('[Cloudinary] Chat upload:', { name: file.originalname, mime: file.mimetype, isVideo, isImage, isAudio });
 
         if (isVideo) {
             return {
@@ -96,11 +97,20 @@ const chatStorage = new CloudinaryStorage({
             };
         }
 
-        // For audio, documents, and all other file types
+        if (isAudio) {
+            return {
+                folder: 'xpoz/chat',
+                resource_type: 'video', // Audio works best as 'video' resource_type in Cloudinary for transcoding
+                allowed_formats: ['mp3', 'wav', 'ogg', 'm4a', 'webm', 'aac'],
+                transformation: [{ quality: 'auto:low' }]
+            };
+        }
+
+        // For documents and all other file types
         return {
             folder: 'xpoz/chat',
             resource_type: 'raw', // Raw upload for non-media files
-            allowed_formats: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'mp3', 'wav', 'ogg', 'm4a', 'zip', 'rar']
+            allowed_formats: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip', 'rar']
         };
     }
 });
