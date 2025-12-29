@@ -22,20 +22,42 @@ router.get('/', async (req, res) => {
 // @route   POST /api/announcements
 // @desc    Create a new announcement
 // @access  Private (Admin only)
-router.post('/', auth, async (req, res) => {
+const { chatStorage } = require('../config/cloudinary');
+const upload = require('multer')({ storage: chatStorage });
+
+router.post('/', [auth, upload.single('file')], async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (user.role !== 'admin') {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
-        const { title, content, type, externalLink } = req.body;
+        const { title, content, type, externalLink, version } = req.body;
+        let attachment = null;
+
+        if (req.file) {
+            // Determine type
+            let fileType = 'document';
+            if (req.file.mimetype === 'application/vnd.android.package-archive' || req.file.originalname.endsWith('.apk')) {
+                fileType = 'apk';
+            } else if (req.file.mimetype.startsWith('image/')) {
+                fileType = 'image';
+            }
+
+            attachment = {
+                url: req.file.path,
+                name: req.file.originalname,
+                type: fileType
+            };
+        }
 
         const newAnnouncement = new Announcement({
             title,
             content,
             type,
             externalLink,
+            version,
+            attachment,
             author: req.user.id
         });
 

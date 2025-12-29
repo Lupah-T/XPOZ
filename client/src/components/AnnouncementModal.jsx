@@ -49,23 +49,34 @@ const AnnouncementModal = ({ onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const data = new FormData();
+            data.append('title', formData.title);
+            data.append('content', formData.content);
+            data.append('type', formData.type);
+            if (formData.externalLink) data.append('externalLink', formData.externalLink);
+            if (formData.version) data.append('version', formData.version);
+            if (formData.file) data.append('file', formData.file);
+
             const res = await fetch(`${API_URL}/api/announcements`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'x-auth-token': token
+                    // Content-Type must be undefined for FormData to set boundary
                 },
-                body: JSON.stringify(formData)
+                body: data
             });
 
             if (res.ok) {
                 const newAnnouncement = await res.json();
                 setAnnouncements([newAnnouncement, ...announcements]);
                 setShowCreate(false);
-                setFormData({ title: '', content: '', type: 'info', externalLink: '' });
+                setFormData({ title: '', content: '', type: 'info', externalLink: '', version: '', file: null });
+            } else {
+                alert('Failed to create announcement');
             }
         } catch (err) {
-            alert('Failed to create announcement');
+            console.error(err);
+            alert('Error creating announcement');
         }
     };
 
@@ -197,6 +208,41 @@ const AnnouncementModal = ({ onClose }) => {
                                         />
                                     </div>
 
+                                    <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>Attachment (APK/Image)</label>
+                                            <input
+                                                type="file"
+                                                onChange={e => setFormData({ ...formData, file: e.target.files[0] })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.5rem',
+                                                    background: '#0f172a',
+                                                    border: '1px solid #334155',
+                                                    color: 'white',
+                                                    borderRadius: '6px'
+                                                }}
+                                            />
+                                        </div>
+                                        <div style={{ width: '120px' }}>
+                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#94a3b8' }}>Version (e.g 1.4)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="v1.0"
+                                                value={formData.version || ''}
+                                                onChange={e => setFormData({ ...formData, version: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.75rem',
+                                                    background: '#0f172a',
+                                                    border: '1px solid #334155',
+                                                    color: 'white',
+                                                    borderRadius: '6px'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div style={{ marginBottom: '1.5rem' }}>
                                         <input
                                             type="url"
@@ -301,6 +347,32 @@ const AnnouncementModal = ({ onClose }) => {
                                             {announcement.content}
                                         </p>
 
+                                        {announcement.attachment && (
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <a
+                                                    href={announcement.attachment.url} // Cloudinary URL
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem',
+                                                        background: announcement.attachment.type === 'apk' ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.1)',
+                                                        color: 'white',
+                                                        padding: '0.75rem 1.2rem',
+                                                        borderRadius: '8px',
+                                                        textDecoration: 'none',
+                                                        fontWeight: '600',
+                                                        fontSize: '0.95rem',
+                                                        border: announcement.attachment.type === 'apk' ? 'none' : '1px solid rgba(255,255,255,0.2)'
+                                                    }}
+                                                >
+                                                    {announcement.attachment.type === 'apk' ? '🚀 Install Update' : '📎 Download Attachment'}
+                                                    {announcement.version && <span style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem', marginLeft: '5px' }}>v{announcement.version}</span>}
+                                                </a>
+                                            </div>
+                                        )}
+
                                         {announcement.externalLink && (
                                             <a
                                                 href={announcement.externalLink}
@@ -319,7 +391,7 @@ const AnnouncementModal = ({ onClose }) => {
                                                     boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
                                                 }}
                                             >
-                                                🚀 Update / Learn More
+                                                🔗 Learn More
                                             </a>
                                         )}
                                         <small style={{ color: '#64748b' }}>

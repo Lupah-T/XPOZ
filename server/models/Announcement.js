@@ -23,6 +23,15 @@ const AnnouncementSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    version: {
+        type: String, // e.g. "1.3.0"
+        trim: true
+    },
+    attachment: {
+        url: String,
+        type: String, // 'apk', 'image', 'document'
+        name: String
+    },
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

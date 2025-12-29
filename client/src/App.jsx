@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileNav from './components/MobileNav';
+import UpdateChecker from './components/UpdateChecker';
 
 // Lazy load pages
 const Home = lazy(() => import('./pages/Home'));
@@ -57,6 +58,7 @@ const App = () => {
       <Router>
         <AuthProvider>
           <SocketProvider>
+            <UpdateChecker />
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
