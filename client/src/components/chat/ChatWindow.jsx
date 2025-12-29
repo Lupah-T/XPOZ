@@ -307,6 +307,30 @@ const ChatWindow = ({ selectedUser, onBack }) => {
 
     const handleVoiceNoteSend = async (audioBlob, duration) => {
         setIsUploading(true);
+        const tempId = `temp-vn-${Date.now()}-${Math.random()}`;
+
+        // 1. Add Optimistic UI message
+        const optimisticMessage = {
+            _id: tempId,
+            sender: user.id,
+            recipient: selectedUser._id,
+            content: '',
+            attachments: [{
+                url: URL.createObjectURL(audioBlob), // Local URL for immediate playback
+                type: 'audio',
+                name: 'Voice Note',
+                duration: duration,
+                isOptimistic: true // Custom flag - though playback works without it
+            }],
+            createdAt: new Date().toISOString(),
+            read: false,
+            delivered: false,
+            status: 'sending'
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+        scrollToBottom();
+
         const formData = new FormData();
         formData.append('file', audioBlob, `voice-note-${Date.now()}.webm`);
 
@@ -331,13 +355,20 @@ const ChatWindow = ({ selectedUser, onBack }) => {
                         mimeType: data.mimeType || 'audio/webm',
                         duration: duration
                     }],
-                    replyTo: replyingTo ? replyingTo._id : null
+                    replyTo: replyingTo ? replyingTo._id : null,
+                    tempId // Pass the tempId for correct replacement
                 });
                 setReplyingTo(null);
                 setIsRecordingVoice(false);
+            } else {
+                // Remove optimistic message if upload fails
+                setMessages(prev => prev.filter(m => m._id !== tempId));
+                alert('Failed to upload voice note.');
             }
         } catch (err) {
             console.error('Voice note upload error:', err);
+            // Remove optimistic message on error
+            setMessages(prev => prev.filter(m => m._id !== tempId));
             alert('Failed to send voice note. Please check your connection.');
         } finally {
             setIsUploading(false);
