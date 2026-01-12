@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
 import UpdateChecker from './components/UpdateChecker';
 
@@ -113,6 +114,7 @@ const App = () => {
                   }
                 />
               </Routes>
+              <Footer />
               <MobileNav />
             </Suspense>
           </SocketProvider>

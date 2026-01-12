@@ -19,7 +19,7 @@ const Auth = () => {
         setError('');
 
         if (!navigator.onLine) {
-            setError('You are curently offline.Please connect to the internet');
+            setError('You are currently offline. Please connect to the internet');
             // Trigger animation by resetting it (if we were using a ref, but state change is enough to re-render)
             return;
         }
@@ -32,7 +32,12 @@ const Auth = () => {
             }
             navigate('/');
         } catch (err) {
-            setError(err.message);
+            console.error('Login error:', err);
+            if (err.message === 'Failed to fetch' || err.message.toLowerCase().includes('network')) {
+                setError('You are currently offline. Please connect to the internet');
+            } else {
+                setError(err.message);
+            }
         }
     };
 
