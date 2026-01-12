@@ -1,5 +1,7 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from 'react';
+
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -53,6 +55,91 @@ const LoadingFallback = () => (
   </div>
 );
 
+const AppContent = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let backListener;
+    const setupListener = async () => {
+      backListener = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        if (location.pathname === '/' || location.pathname === '/auth') {
+          CapacitorApp.exitApp();
+        } else {
+          navigate('/');
+        }
+      });
+    };
+    setupListener();
+
+    return () => {
+      if (backListener) backListener.remove();
+    };
+  }, [location, navigate]);
+
+  const showFooter = !location.pathname.startsWith('/messages');
+
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/recover" element={<RecoverPassword />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create"
+          element={
+            <ProtectedRoute>
+              <CreatePost />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/:id"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+      {showFooter && <Footer />}
+      <MobileNav />
+    </Suspense>
+  );
+};
+
 const App = () => {
   return (
     <ErrorBoundary>
@@ -60,63 +147,7 @@ const App = () => {
         <AuthProvider>
           <SocketProvider>
             <UpdateChecker />
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/recover" element={<RecoverPassword />} />
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route
-                  path="/admin/dashboard"
-                  element={
-                    <AdminRoute>
-                      <AdminDashboard />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/users"
-                  element={
-                    <ProtectedRoute>
-                      <Users />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/messages"
-                  element={
-                    <ProtectedRoute>
-                      <Messages />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/create"
-                  element={
-                    <ProtectedRoute>
-                      <CreatePost />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile/:id"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Home />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-              <Footer />
-              <MobileNav />
-            </Suspense>
+            <AppContent />
           </SocketProvider>
         </AuthProvider>
       </Router>

@@ -19,7 +19,7 @@ const Footer = () => {
                         color: 'inherit'
                     }}
                 >
-                    Admin Access
+
                 </Link>
             </div>
         </footer>
