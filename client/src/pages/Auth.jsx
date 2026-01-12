@@ -17,6 +17,13 @@ const Auth = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!navigator.onLine) {
+            setError('You are curently offline.Please connect to the internet');
+            // Trigger animation by resetting it (if we were using a ref, but state change is enough to re-render)
+            return;
+        }
+
         try {
             if (isLogin) {
                 await login(pseudoName, password);
@@ -36,7 +43,7 @@ const Auth = () => {
                     {isLogin ? 'Login to X-POZ' : 'Join the Resistance'}
                 </h2>
 
-                {error && <div style={{ color: '#ef4444', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+                {error && <div className="shake-animation" style={{ color: '#ef4444', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
 
                 <form onSubmit={handleSubmit}>
                     <div className="input-group">

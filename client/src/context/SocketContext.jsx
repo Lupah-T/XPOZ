@@ -189,40 +189,58 @@ export const SocketProvider = ({ children }) => {
     };
 
     const startCall = async (otherUser, type) => {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: type === 'video',
-            audio: true
-        });
-        setLocalStream(stream);
+        if (!navigator.onLine) {
+            alert('You are currently offline. Please connect to the internet to make calls.');
+            return;
+        }
 
-        const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
+        if (!socket || !socket.connected) {
+            console.error('Socket not connected');
+            alert('Connection to server lost. Please try again later.');
+            return;
+        }
 
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                socket.emit('ice-candidate', { to: otherUser._id, candidate: event.candidate });
-            }
-        };
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: type === 'video',
+                audio: true
+            });
+            setLocalStream(stream);
 
-        pc.ontrack = (event) => {
-            setRemoteStream(event.streams[0]);
-        };
+            const pc = new RTCPeerConnection({
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            });
 
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { to: otherUser._id, candidate: event.candidate });
+                }
+            };
 
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
+            pc.ontrack = (event) => {
+                setRemoteStream(event.streams[0]);
+            };
 
-        socket.emit('call-user', {
-            to: otherUser._id,
-            from: user.id,
-            signal: offer,
-            type
-        });
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-        peerConnection.current = pc;
-        setCall({ status: 'ringing', type, otherUser });
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            socket.emit('call-user', {
+                to: otherUser._id,
+                from: user.id,
+                signal: offer,
+                type
+            });
+
+            peerConnection.current = pc;
+            setCall({ status: 'ringing', type, otherUser });
+        } catch (err) {
+            console.error('Failed to start call:', err);
+            alert(`Failed to start call: ${err.message}. Ensure camera/microphone permissions are granted.`);
+            setCall(null);
+            setLocalStream(null);
+        }
     };
 
     const acceptCall = async () => {
