@@ -461,6 +461,7 @@ const Profile = () => {
                                 >
                                     <span style={{ fontWeight: 'bold' }}>❤️ {post.likes.length}</span>
                                     <span style={{ fontWeight: 'bold' }}>💬 {post.comments.length}</span>
+                                    <span style={{ fontWeight: 'bold' }}>👁️ {post.views || 0}</span>
                                 </div>
                             </div>
                         ))}
