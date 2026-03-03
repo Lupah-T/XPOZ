@@ -5,6 +5,7 @@ import VideoPlayer from '../components/VideoPlayer';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 import { getMediaUrl } from '../utils/media';
+import PostLikesModal from '../components/PostLikesModal';
 
 const Home = () => {
     const [reports, setReports] = useState([]);
@@ -13,6 +14,9 @@ const Home = () => {
     const navigate = useNavigate();
 
     const [followedUsers, setFollowedUsers] = useState([]);
+    const [likesModalUsers, setLikesModalUsers] = useState(null);
+    const observer = React.useRef(null);
+    const viewedReports = React.useRef(new Set()); // Track viewed reports in session
 
     const fetchReports = async () => {
         try {
@@ -46,6 +50,37 @@ const Home = () => {
         const interval = setInterval(fetchReports, 5000);
         return () => clearInterval(interval);
     }, [token]);
+
+    useEffect(() => {
+        // Setup observer
+        observer.current = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const reportId = entry.target.getAttribute('data-id');
+                    if (reportId && !viewedReports.current.has(reportId)) {
+                        handleView(reportId);
+                        viewedReports.current.add(reportId);
+                        if (observer.current) observer.current.unobserve(entry.target);
+                    }
+                }
+            });
+        }, { threshold: 0.5 }); // 50% visible
+
+        return () => {
+            if (observer.current) observer.current.disconnect();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (observer.current) {
+            reports.forEach(report => {
+                const el = document.getElementById(`report-${report._id}`);
+                if (el && !viewedReports.current.has(report._id)) {
+                    observer.current.observe(el);
+                }
+            });
+        }
+    }, [reports]);
 
     const handleFollow = async (authorId) => {
         if (!token) return;
@@ -162,8 +197,26 @@ const Home = () => {
         }
     };
 
+    const handleView = async (reportId) => {
+        try {
+            await fetch(`${API_URL}/api/reports/${reportId}/view`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            setReports(prev => prev.map(r => r._id === reportId ? { ...r, views: (r.views || 0) + 1 } : r));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     return (
         <>
+            {likesModalUsers && (
+                <PostLikesModal
+                    likes={likesModalUsers}
+                    onClose={() => setLikesModalUsers(null)}
+                />
+            )}
             <Header />
             <main className="container" style={{ flex: 1, maxWidth: '600px', margin: '0 auto', paddingTop: '1rem' }}>
 
@@ -273,7 +326,7 @@ const Home = () => {
                             }
 
                             return (
-                                <div key={report._id} className="card" style={{ padding: '0', overflow: 'hidden', animation: 'fadeIn 0.5s' }}>
+                                <div key={report._id} id={`report-${report._id}`} data-id={report._id} className="card" style={{ padding: '0', overflow: 'hidden', animation: 'fadeIn 0.5s' }}>
                                     {/* Header */}
                                     <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -396,7 +449,21 @@ const Home = () => {
                                             <button style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', padding: 0 }}>🔖</button>
                                         </div>
 
-                                        <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{report.likes ? report.likes.length : 0} likes</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                                            <div
+                                                style={{ fontWeight: '600', cursor: 'pointer' }}
+                                                onClick={() => {
+                                                    if (report.likes && report.likes.length > 0) {
+                                                        setLikesModalUsers(report.likes);
+                                                    }
+                                                }}
+                                            >
+                                                {report.likes ? report.likes.length : 0} likes
+                                            </div>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                                                {report.views || 0} views
+                                            </div>
+                                        </div>
 
                                         <div style={{ marginBottom: '0.5rem' }}>
                                             <span style={{ fontWeight: '600', marginRight: '0.5rem' }}>{report.author ? report.author.pseudoName : 'Anon'}</span>
@@ -475,27 +542,29 @@ const Home = () => {
             </main>
 
             {/* Lightbox Modal */}
-            {lightboxMedia && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(0,0,0,0.95)',
-                        zIndex: 99999,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'zoom-out'
-                    }}
-                    onClick={() => setLightboxMedia(null)}
-                >
-                    <img
-                        src={lightboxMedia.url}
-                        style={{ maxWidth: '100%', maxHeight: '100vh', objectFit: 'contain' }}
-                        alt="Full view"
-                    />
-                </div>
-            )}
+            {
+                lightboxMedia && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.95)',
+                            zIndex: 99999,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'zoom-out'
+                        }}
+                        onClick={() => setLightboxMedia(null)}
+                    >
+                        <img
+                            src={lightboxMedia.url}
+                            style={{ maxWidth: '100%', maxHeight: '100vh', objectFit: 'contain' }}
+                            alt="Full view"
+                        />
+                    </div>
+                )
+            }
         </>
     );
 };

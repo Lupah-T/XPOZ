@@ -44,7 +44,8 @@ router.get('/', async (req, res) => {
 
         const reports = await Report.find(query)
             .sort({ timestamp: -1 })
-            .populate('author', 'pseudoName avatarUrl effects'); // Populate avatarUrl for UI
+            .populate('author', 'pseudoName avatarUrl effects') // Populate avatarUrl for UI
+            .populate('likes', 'pseudoName avatarUrl effects'); // Populate likes for UI
         res.json(reports);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -154,6 +155,21 @@ router.post('/:id/like', auth, async (req, res) => {
         }
         await report.save();
         res.json(report.likes);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Increment views for a report
+router.post('/:id/view', async (req, res) => {
+    try {
+        const report = await Report.findByIdAndUpdate(
+            req.params.id,
+            { $inc: { views: 1 } },
+            { new: true }
+        );
+        if (!report) return res.status(404).json({ message: 'Report not found' });
+        res.json({ views: report.views });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
