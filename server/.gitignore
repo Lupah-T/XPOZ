@@ -16,3 +16,4 @@ uploads/
 
 # OS files
 .DS_Store
+.env
