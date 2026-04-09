@@ -4,43 +4,57 @@ const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
+
+// Models (must load before DB migration)
+const User = require('./models/User');
+const Message = require('./models/Message');
+
+// Routers
+const reportsRouter = require('./routes/reports');
+const authRouter = require('./routes/auth');
+const usersRouter = require('./routes/users');
+const adminRouter = require('./routes/admin');
+const announcementsRouter = require('./routes/announcements');
+const messagesRouter = require('./routes/messages');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*', // In production, specify your frontend URL
+        origin: process.env.FRONTEND_URL || '*', // Lock down in prod
         methods: ['GET', 'POST']
     }
 });
 
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// --- Middleware ---
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-
-// Database Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/anonymous_reporting', {
-    //   useNewUrlParser: true,
-    //   useUnifiedTopology: true,
-})
+// --- Database Connection ---
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/anonymous_reporting')
     .then(async () => {
         console.log('MongoDB connected');
 
-        // Migration: Generate handles for existing users
+        // --- Migration: generate handles for existing users ---
         try {
             const usersWithoutHandle = await User.find({ handle: { $exists: false } });
             if (usersWithoutHandle.length > 0) {
                 console.log(`Found ${usersWithoutHandle.length} users without handles. Migrating...`);
                 for (const user of usersWithoutHandle) {
                     let handle = user.pseudoName.toLowerCase().replace(/\s+/g, '');
-                    // Basic collision handling
-                    const existing = await User.findOne({ handle });
-                    if (existing) {
-                        handle = `${handle}${Math.floor(1000 + Math.random() * 9000)}`;
+                    // Ensure uniqueness
+                    let isUnique = false;
+                    while (!isUnique) {
+                        const existing = await User.findOne({ handle });
+                        if (existing) {
+                            handle = `${handle}${Math.floor(1000 + Math.random() * 9000)}`;
+                        } else {
+                            isUnique = true;
+                        }
                     }
                     user.handle = handle;
                     await user.save();
@@ -51,180 +65,131 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/anonymous_r
             console.error('Migration error:', err);
         }
     })
-    .catch(err => console.error(err));
+    .catch(err => console.error('MongoDB connection error:', err));
 
-// Middleware to make io available in routes
+// --- Make io available in routes ---
 app.use((req, res, next) => {
     req.io = io;
     next();
 });
 
-// Routes
-const reportsRouter = require('./routes/reports');
-const authRouter = require('./routes/auth');
-const usersRouter = require('./routes/users');
-const adminRouter = require('./routes/admin');
-
+// --- Routes ---
 app.use('/api/reports', reportsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/announcements', require('./routes/announcements'));
-app.use('/api/messages', require('./routes/messages'));
+app.use('/api/announcements', announcementsRouter);
+app.use('/api/messages', messagesRouter);
 
 app.get('/', (req, res) => {
     res.send('Anonymous Reporting API is running');
 });
 
-// Socket.io for real-time chat
-const User = require('./models/User');
-const Message = require('./models/Message');
-const jwt = require('jsonwebtoken');
-
-// Track online users
-const onlineUsers = new Map(); // userId -> socketId
+// --- Socket.io Setup ---
+const onlineUsers = new Map(); // userId -> Set(socketIds)
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    // User goes online
+    // --- User comes online ---
     socket.on('user-online', async ({ token }) => {
         try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
-            const userId = decoded.id; // Payload is { id: ... } not { user: { id: ... } }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const userId = decoded.id;
 
             socket.userId = userId;
-            onlineUsers.set(userId, socket.id);
 
-            // Update database
-            await User.findByIdAndUpdate(userId, {
-                isOnline: true,
-                lastSeen: new Date()
-            });
+            // Track multiple devices per user
+            if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
+            onlineUsers.get(userId).add(socket.id);
 
-            // Broadcast to all users
-            io.emit('user-status-change', {
-                userId,
-                isOnline: true
-            });
+            // Join personal room
+            socket.join(userId);
 
-            console.log(`User ${userId} is online`);
+            // Update DB
+            await User.findByIdAndUpdate(userId, { isOnline: true, lastSeen: new Date() });
+
+            // Broadcast online status
+            io.emit('user-status-change', { userId, isOnline: true });
+            console.log(`User ${userId} is online (socket ${socket.id})`);
         } catch (err) {
             console.error('Online status error:', err);
         }
     });
 
-    // Join a personal room for private messaging
-    socket.on('join-room', (userId) => {
-        socket.join(userId);
-        console.log(`User ${userId} joined their personal room`);
-    });
-
-    // Send private message
-    socket.on('private-message', async (data) => {
+    // --- Private messaging ---
+    socket.on('private-message', async ({ senderId, recipientId, content, attachments, tempId }) => {
         try {
-            const { senderId, recipientId, content, attachments, tempId } = data; // Destructure tempId
+            const recipientOnline = onlineUsers.has(recipientId);
 
-            // Check if recipient is online
-            const isDelivered = onlineUsers.has(recipientId);
-
-            // Save to database
             const newMessage = new Message({
                 sender: senderId,
                 recipient: recipientId,
                 content,
                 attachments,
-                delivered: isDelivered // Set delivered based on online status
+                delivered: recipientOnline
             });
+
             const savedMessage = await newMessage.save();
 
-            // Emit to recipient's room
-            io.to(recipientId).emit('receive-message', savedMessage);
+            // Emit to recipient(s)
+            if (recipientOnline) {
+                onlineUsers.get(recipientId).forEach(id => io.to(id).emit('receive-message', savedMessage));
+            }
 
-            // Emit back to sender (confirm sent) - include tempId
+            // Confirm to sender
             io.to(senderId).emit('message-sent', { message: savedMessage, tempId });
-
         } catch (err) {
             console.error('Message error:', err);
         }
     });
 
-    // Mark messages as read
+    // --- Mark messages as read ---
     socket.on('mark-read', async ({ senderId, recipientId }) => {
         try {
-            // Update all unread messages from sender to recipient
             await Message.updateMany(
                 { sender: senderId, recipient: recipientId, read: false },
                 { $set: { read: true, readAt: new Date(), delivered: true } }
             );
-
-            // Notify the sender (the one who wrote the messages) that they are read
             io.to(senderId).emit('messages-read', { recipientId });
         } catch (err) {
             console.error('Mark read error:', err);
         }
     });
 
-    // Typing indicators
-    socket.on('typing-start', ({ to, from }) => {
-        io.to(to).emit('typing-start', { from });
-    });
+    // --- Typing indicators ---
+    socket.on('typing-start', ({ to, from }) => io.to(to).emit('typing-start', { from }));
+    socket.on('typing-stop', ({ to, from }) => io.to(to).emit('typing-stop', { from }));
 
-    socket.on('typing-stop', ({ to, from }) => {
-        io.to(to).emit('typing-stop', { from });
-    });
+    // --- WebRTC signaling ---
+    socket.on('call-user', ({ to, from, signal, type }) => io.to(to).emit('incoming-call', { from, signal, type }));
+    socket.on('answer-call', ({ to, signal }) => io.to(to).emit('call-accepted', { signal }));
+    socket.on('ice-candidate', ({ to, candidate }) => io.to(to).emit('ice-candidate', { candidate }));
+    socket.on('reject-call', ({ to }) => io.to(to).emit('call-rejected'));
+    socket.on('end-call', ({ to }) => io.to(to).emit('call-ended'));
 
-    // WebRTC Signaling for Calls
-    socket.on('call-user', ({ to, from, signal, type }) => {
-        console.log(`Call from ${from} to ${to} (${type})`);
-        io.to(to).emit('incoming-call', { from, signal, type });
-    });
-
-    socket.on('answer-call', ({ to, signal }) => {
-        console.log(`Call answered by ${socket.userId}, sending to ${to}`);
-        io.to(to).emit('call-accepted', { signal });
-    });
-
-    socket.on('ice-candidate', ({ to, candidate }) => {
-        io.to(to).emit('ice-candidate', { candidate });
-    });
-
-    socket.on('reject-call', ({ to }) => {
-        io.to(to).emit('call-rejected');
-    });
-
-    socket.on('end-call', ({ to }) => {
-        io.to(to).emit('call-ended');
-    });
-
-    // Disconnect
+    // --- Disconnect ---
     socket.on('disconnect', async () => {
         console.log('User disconnected:', socket.id);
 
         if (socket.userId) {
-            onlineUsers.delete(socket.userId);
-
-            // Update database
-            await User.findByIdAndUpdate(socket.userId, {
-                isOnline: false,
-                lastSeen: new Date()
-            });
-
-            // Broadcast to all users
-            io.emit('user-status-change', {
-                userId: socket.userId,
-                isOnline: false,
-                lastSeen: new Date()
-            });
+            const sockets = onlineUsers.get(socket.userId);
+            if (sockets) {
+                sockets.delete(socket.id);
+                if (sockets.size === 0) {
+                    onlineUsers.delete(socket.userId);
+                    await User.findByIdAndUpdate(socket.userId, { isOnline: false, lastSeen: new Date() });
+                    io.emit('user-status-change', { userId: socket.userId, isOnline: false, lastSeen: new Date() });
+                } else {
+                    onlineUsers.set(socket.userId, sockets);
+                }
+            }
         }
     });
 });
 
-// Start Server
-// 404 Handler
-app.use((req, res) => {
-    res.status(404).json({ message: `Route ${req.originalUrl} not found` });
-});
+// --- 404 & Global Error Handling ---
+app.use((req, res) => res.status(404).json({ message: `Route ${req.originalUrl} not found` }));
 
 app.use((err, req, res, next) => {
     console.error('[Global Error Handler]', err);
@@ -234,4 +199,5 @@ app.use((err, req, res, next) => {
     });
 });
 
+// --- Start Server ---
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
